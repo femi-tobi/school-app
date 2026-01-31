@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class NewsArticle {
   final String category;
   final String title;
