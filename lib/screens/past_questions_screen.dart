@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/past_question_document.dart';
+import '../services/past_questions_service.dart';
 import 'upload_past_question_screen.dart';
 
 class PastQuestionsScreen extends StatefulWidget {
@@ -12,48 +13,98 @@ class PastQuestionsScreen extends StatefulWidget {
 class _PastQuestionsScreenState extends State<PastQuestionsScreen> {
   int _selectedBottomNavIndex = 2; // PQ Library tab
   int _selectedFilterIndex = 0; // All filter
+  
+  final PastQuestionsService _pastQuestionsService = PastQuestionsService();
+  List<PastQuestionDocument> _documents = [];
+  bool _isLoading = true;
+  String? _errorMessage;
 
-  final List<PastQuestionDocument> _documents = [
-    PastQuestionDocument(
-      courseCode: 'CSC 301',
-      courseName: 'Data Structures',
-      category: 'Computer Science',
-      session: '2022/2023 Session',
-      uploadedBy: 'Prof. Smith',
-      isFree: true,
-      iconName: 'menu_book',
-      gradientColors: [
-        const Color(0xFFDCEEFF),
-        const Color(0xFFEFF6FF),
-      ],
-    ),
-    PastQuestionDocument(
-      courseCode: 'MAT 202',
-      courseName: 'Linear Algebra II',
-      category: 'Mathematics',
-      session: '2021/2022 Session',
-      uploadedBy: 'Dr. Sarah J.',
-      isFree: false,
-      iconName: 'calculate',
-      gradientColors: [
-        const Color(0xFFE0E7FF),
-        const Color(0xFFEEF2FF),
-      ],
-    ),
-    PastQuestionDocument(
-      courseCode: 'BIO 101',
-      courseName: 'Cell Biology',
-      category: 'Biology',
-      session: '2023/2024 Session',
-      uploadedBy: 'Student Union',
-      isFree: true,
-      iconName: 'biotech',
-      gradientColors: [
-        const Color(0xFFF3E8FF),
-        const Color(0xFFFAF5FF),
-      ],
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _fetchPastQuestions();
+  }
+
+  Future<void> _fetchPastQuestions() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    final result = await _pastQuestionsService.fetchPastQuestions();
+
+    if (result['success'] == true) {
+      final List<dynamic> data = result['data'] ?? [];
+      setState(() {
+        _documents = data.map((item) => PastQuestionDocument(
+          id: item['_id'] ?? '',
+          courseCode: item['courseCode'] ?? 'Unknown',
+          courseName: item['courseName'] ?? item['title'] ?? 'Unknown',
+          category: item['category'] ?? item['department'] ?? 'General',
+          session: item['session'] ?? '${item['semester'] ?? ''} Semester',
+          uploadedBy: item['uploadedBy']?['name'] ?? 'Anonymous',
+          isFree: !(item['isPaid'] ?? false),
+          iconName: 'description',
+          gradientColors: [
+            const Color(0xFFDCEEFF),
+            const Color(0xFFEFF6FF),
+          ],
+        )).toList();
+        _isLoading = false;
+      });
+    } else {
+      setState(() {
+        _errorMessage = result['message'] ?? 'Failed to load questions';
+        _isLoading = false;
+        // Use sample data as fallback
+        _documents = _getSampleDocuments();
+      });
+    }
+  }
+
+  List<PastQuestionDocument> _getSampleDocuments() {
+    return [
+      PastQuestionDocument(
+        courseCode: 'CSC 301',
+        courseName: 'Data Structures',
+        category: 'Computer Science',
+        session: '2022/2023 Session',
+        uploadedBy: 'Prof. Smith',
+        isFree: true,
+        iconName: 'menu_book',
+        gradientColors: [
+          const Color(0xFFDCEEFF),
+          const Color(0xFFEFF6FF),
+        ],
+      ),
+      PastQuestionDocument(
+        courseCode: 'MAT 202',
+        courseName: 'Linear Algebra II',
+        category: 'Mathematics',
+        session: '2021/2022 Session',
+        uploadedBy: 'Dr. Sarah J.',
+        isFree: false,
+        iconName: 'calculate',
+        gradientColors: [
+          const Color(0xFFE0E7FF),
+          const Color(0xFFEEF2FF),
+        ],
+      ),
+      PastQuestionDocument(
+        courseCode: 'BIO 101',
+        courseName: 'Cell Biology',
+        category: 'Biology',
+        session: '2023/2024 Session',
+        uploadedBy: 'Student Union',
+        isFree: true,
+        iconName: 'biotech',
+        gradientColors: [
+          const Color(0xFFF3E8FF),
+          const Color(0xFFFAF5FF),
+        ],
+      ),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -75,16 +126,40 @@ class _PastQuestionsScreenState extends State<PastQuestionsScreen> {
 
             // Content
             Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                itemCount: _documents.length,
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: _buildPQCard(_documents[index], isDark),
-                  );
-                },
-              ),
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _documents.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.folder_open, size: 64, color: Colors.grey.shade400),
+                              const SizedBox(height: 16),
+                              Text(
+                                _errorMessage ?? 'No past questions found',
+                                style: TextStyle(color: Colors.grey.shade600),
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: _fetchPastQuestions,
+                                child: const Text('Retry'),
+                              ),
+                            ],
+                          ),
+                        )
+                      : RefreshIndicator(
+                          onRefresh: _fetchPastQuestions,
+                          child: ListView.builder(
+                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                            itemCount: _documents.length,
+                            itemBuilder: (context, index) {
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 16),
+                                child: _buildPQCard(_documents[index], isDark),
+                              );
+                            },
+                          ),
+                        ),
             ),
           ],
         ),

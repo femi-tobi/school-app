@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'dart:io';
 import '../models/upload_past_question.dart';
+import '../services/past_questions_service.dart';
 
 class UploadPastQuestionScreen extends StatefulWidget {
   const UploadPastQuestionScreen({super.key});
@@ -12,13 +14,16 @@ class UploadPastQuestionScreen extends StatefulWidget {
 class _UploadPastQuestionScreenState extends State<UploadPastQuestionScreen> {
   final _formKey = GlobalKey<FormState>();
   final _courseNameController = TextEditingController();
+  final _courseCodeController = TextEditingController();
   final _priceController = TextEditingController(text: '50');
+  final PastQuestionsService _pastQuestionsService = PastQuestionsService();
   
   String? _selectedFilePath;
   String? _selectedFileName;
   String _selectedSemester = '1st Semester';
   String _selectedLevel = '100 Level';
   bool _isPaid = true;
+  bool _isUploading = false;
   List<String> _tags = ['Calculus', '2023 Exam', 'Derivatives'];
   
   final List<String> _semesters = ['1st Semester', '2nd Semester'];
@@ -27,6 +32,7 @@ class _UploadPastQuestionScreenState extends State<UploadPastQuestionScreen> {
   @override
   void dispose() {
     _courseNameController.dispose();
+    _courseCodeController.dispose();
     _priceController.dispose();
     super.dispose();
   }
@@ -88,7 +94,7 @@ class _UploadPastQuestionScreenState extends State<UploadPastQuestionScreen> {
     );
   }
 
-  void _submitUpload() {
+  Future<void> _submitUpload() async {
     if (_formKey.currentState!.validate()) {
       if (_selectedFilePath == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -97,21 +103,39 @@ class _UploadPastQuestionScreenState extends State<UploadPastQuestionScreen> {
         return;
       }
 
-      final upload = UploadPastQuestion(
-        filePath: _selectedFilePath,
+      setState(() => _isUploading = true);
+
+      // Call the API upload service
+      final result = await _pastQuestionsService.uploadPastQuestion(
+        file: File(_selectedFilePath!),
+        title: _courseNameController.text,
         courseName: _courseNameController.text,
+        courseCode: _courseCodeController.text.isNotEmpty 
+            ? _courseCodeController.text 
+            : _courseNameController.text,
         semester: _selectedSemester,
         level: _selectedLevel,
         tags: _tags,
         isPaid: _isPaid,
-        price: _isPaid ? int.tryParse(_priceController.text) : null,
+        price: _isPaid ? double.tryParse(_priceController.text) : null,
       );
 
-      // TODO: Implement actual upload logic
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Upload submitted successfully!')),
-      );
-      Navigator.pop(context);
+      setState(() => _isUploading = false);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['success'] == true 
+                ? 'Upload submitted successfully!' 
+                : result['message'] ?? 'Upload failed'),
+            backgroundColor: result['success'] == true ? Colors.green : Colors.red,
+          ),
+        );
+
+        if (result['success'] == true) {
+          Navigator.pop(context, true); // Return true to indicate successful upload
+        }
+      }
     }
   }
 
@@ -742,7 +766,7 @@ class _UploadPastQuestionScreenState extends State<UploadPastQuestionScreen> {
             width: double.infinity,
             height: 56,
             child: ElevatedButton(
-              onPressed: _submitUpload,
+              onPressed: _isUploading ? null : _submitUpload,
               style: ElevatedButton.styleFrom(
                 backgroundColor: primaryColor,
                 foregroundColor: Colors.white,
@@ -752,20 +776,29 @@ class _UploadPastQuestionScreenState extends State<UploadPastQuestionScreen> {
                 elevation: 8,
                 shadowColor: primaryColor.withOpacity(0.3),
               ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Submit Upload',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+              child: _isUploading
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Submit Upload',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        Icon(Icons.send),
+                      ],
                     ),
-                  ),
-                  SizedBox(width: 8),
-                  Icon(Icons.send),
-                ],
-              ),
             ),
           ),
           const SizedBox(height: 24), // Safe area for iOS

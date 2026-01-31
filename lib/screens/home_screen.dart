@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../utils/onboarding_utils.dart';
+import '../services/api_auth_service.dart';
 import '../main.dart';
 import 'timetable_screen.dart';
 import 'planner_screen.dart';
@@ -21,11 +22,52 @@ class _HomeScreenState extends State<HomeScreen> {
   int _minutes = 12;
   int _seconds = 45;
   Timer? _timer;
+  
+  // User data
+  final ApiAuthService _authService = ApiAuthService();
+  String _userName = 'User';
+  String? _userAvatar;
 
   @override
   void initState() {
     super.initState();
     _startCountdown();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final user = await _authService.getCurrentUser();
+    if (user != null && mounted) {
+      setState(() {
+        _userName = user['name'] ?? 'User';
+        _userAvatar = user['avatar'];
+      });
+    }
+  }
+
+  // Get greeting based on time of day
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good Morning,';
+    if (hour < 17) return 'Good Afternoon,';
+    return 'Good Evening,';
+  }
+
+  // Build initials avatar placeholder
+  Widget _buildInitials() {
+    final initials = _userName.isNotEmpty
+        ? _userName.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join().toUpperCase()
+        : 'U';
+    return Center(
+      child: Text(
+        initials,
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+          color: Theme.of(context).colorScheme.primary,
+        ),
+      ),
+    );
   }
 
   @override
@@ -129,32 +171,43 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: Row(
         children: [
-          // Profile Picture
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: isDark ? Colors.grey[800]! : Colors.white,
-                width: 2,
-              ),
-              image: const DecorationImage(
-                image: NetworkImage(
-                  'https://lh3.googleusercontent.com/aida-public/AB6AXuBLlfrd6iHrpQIWoAw9Hrd4tGfVRGrSqcF6nBzMWWzaX3eVnQzPUX0bmu8qj7PZlChX92yolDM4fWHpGeUTmmLXQkH5lpUEJh4yXVMXOElTkeNvbjRQODSwWhVjJ68vtNQ6EaqYk0__ing_1tUTd2OXh4VCgDDAwESTdkV9yxzf53sYH7stSul2xr-Ud-MmAx1TRs29W_vmAtLL1G0ZNi7lOhS28XHR2hBTWCmFT_V2lv53WNTVztH-CKkC9TbfJ8sZYe27pRPeDmM',
+          // Profile Picture - Now using real avatar or initials
+          GestureDetector(
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
+            },
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                border: Border.all(
+                  color: isDark ? Colors.grey[800]! : Theme.of(context).colorScheme.primary,
+                  width: 2,
                 ),
-                fit: BoxFit.cover,
               ),
+              child: _userAvatar != null
+                  ? ClipOval(
+                      child: Image.network(
+                        _userAvatar!,
+                        fit: BoxFit.cover,
+                        width: 40,
+                        height: 40,
+                        errorBuilder: (context, error, stackTrace) => _buildInitials(),
+                      ),
+                    )
+                  : _buildInitials(),
             ),
           ),
           const SizedBox(width: 12),
           
-          // Greeting
+          // Greeting - Now dynamic
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Good Morning,',
+                _getGreeting(),
                 style: TextStyle(
                   fontSize: 12,
                   color: isDark ? Colors.grey[400] : Colors.grey[600],
@@ -162,7 +215,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               Text(
-                'Alex Johnson',
+                _userName,
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 class PastQuestionDocument {
+  final String? id;
   final String courseCode;
   final String courseName;
   final String category;
@@ -11,6 +12,7 @@ class PastQuestionDocument {
   final List<Color> gradientColors;
 
   PastQuestionDocument({
+    this.id,
     required this.courseCode,
     required this.courseName,
     required this.category,

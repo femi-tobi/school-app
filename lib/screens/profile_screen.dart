@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../services/api_auth_service.dart';
+import 'onboarding/onboarding_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -8,6 +10,67 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  final ApiAuthService _authService = ApiAuthService();
+  
+  // User data from API
+  Map<String, dynamic>? _userData;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    // First try to get cached user data
+    final cachedUser = await _authService.getCurrentUser();
+    if (cachedUser != null) {
+      setState(() {
+        _userData = cachedUser;
+        _isLoading = false;
+      });
+    }
+
+    // Then fetch fresh data from API
+    final result = await _authService.fetchCurrentUser();
+    if (result['success'] == true && mounted) {
+      setState(() {
+        _userData = result['user'];
+        _isLoading = false;
+      });
+    } else if (mounted) {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  // Helper to get user field with fallback
+  String _getUserField(String field, String fallback) {
+    if (_userData == null) return fallback;
+    final value = _userData![field];
+    if (value == null || value.toString().isEmpty) return fallback;
+    return value.toString();
+  }
+
+  // Build avatar placeholder with initials
+  Widget _buildAvatarPlaceholder(Color primaryColor) {
+    final name = _getUserField('name', 'User');
+    final initials = name.isNotEmpty
+        ? name.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join().toUpperCase()
+        : 'U';
+    
+    return Center(
+      child: Text(
+        initials,
+        style: TextStyle(
+          fontSize: 28,
+          fontWeight: FontWeight.bold,
+          color: primaryColor,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -133,13 +196,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       color: primaryColor,
                       width: 2,
                     ),
-                    image: const DecorationImage(
-                      image: NetworkImage(
-                        'https://lh3.googleusercontent.com/aida-public/AB6AXuDhn7_ZBpaGj_KCLnpcDWNHi4M4odlqzznc0883Em_mzjeAap-5Hr5PSkFGg-A7OfAqtsiI3gvHYnxPkyXZ2lw2TsMWeudFit8bW8vcnPP5-4zs3ezZszWQVWIywXuYbsyLGFMHhEQ6v0IKaBuk7W4iIRNJm8i3vYed6L4qE0E5h3-J7nYyWJZPPOLP6sZ4MQxextE7ycfP-6gIqVJZRmggzA7lyCyWCjMUEeqe3k4ev4duvslnGzIV2c0PtiwUMxGKDa_nFIU3vYE',
-                      ),
-                      fit: BoxFit.cover,
-                    ),
+                    color: primaryColor.withOpacity(0.1),
                   ),
+                  child: _userData?['avatar'] != null
+                      ? ClipOval(
+                          child: Image.network(
+                            _userData!['avatar'],
+                            fit: BoxFit.cover,
+                            width: 80,
+                            height: 80,
+                            errorBuilder: (context, error, stackTrace) =>
+                                _buildAvatarPlaceholder(primaryColor),
+                          ),
+                        )
+                      : _buildAvatarPlaceholder(primaryColor),
                 ),
                 Positioned(
                   bottom: 0,
@@ -166,38 +236,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
             
             const SizedBox(width: 20),
             
-            // User Info
+            // User Info - Now using real data
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Alex Johnson',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : Colors.grey.shade900,
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _getUserField('name', 'User'),
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : Colors.grey.shade900,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _getUserField('university', 'No university set'),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: isDark ? Colors.grey.shade400 : Colors.grey.shade500,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${_getUserField('department', 'No department')} | ${_getUserField('level', '')} Level',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: primaryColor,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Federal University of Technology',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isDark ? Colors.grey.shade400 : Colors.grey.shade500,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Computer Science | 400 Level',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: primaryColor,
-                    ),
-                  ),
-                ],
-              ),
             ),
           ],
         ),
@@ -535,11 +607,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: const Text('Cancel'),
                       ),
                       TextButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          // TODO: Implement logout logic
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Logged out successfully')),
+                        onPressed: () async {
+                          // Save references BEFORE any async operations
+                          final navigator = Navigator.of(context);
+                          
+                          // Close the dialog first
+                          navigator.pop();
+                          
+                          // Call logout API and clear session
+                          await _authService.logout();
+                          
+                          // Navigate to onboarding/login screen and remove all previous routes
+                          navigator.pushAndRemoveUntil(
+                            MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+                            (route) => false,
                           );
                         },
                         child: const Text('Logout'),

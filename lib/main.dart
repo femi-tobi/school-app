@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'services/api_auth_service.dart';
 import 'utils/onboarding_utils.dart';
 import 'screens/onboarding/onboarding_screen.dart';
 import 'screens/home_screen.dart';
@@ -61,18 +62,33 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _checkOnboardingStatus();
+    _checkAppStatus();
   }
 
-  Future<void> _checkOnboardingStatus() async {
-    final isComplete = await OnboardingUtils.isOnboardingComplete();
+  Future<void> _checkAppStatus() async {
+    // Check if onboarding is complete
+    final isOnboardingComplete = await OnboardingUtils.isOnboardingComplete();
+    
+    if (!isOnboardingComplete) {
+      // First time user - show onboarding
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+        );
+      }
+      return;
+    }
+    
+    // Onboarding complete - check if user is logged in
+    final authService = ApiAuthService();
+    final isLoggedIn = await authService.isLoggedIn();
     
     if (mounted) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (_) => isComplete
+          builder: (_) => isLoggedIn
               ? const HomeScreen()
-              : const OnboardingScreen(),
+              : const OnboardingScreen(), // Show onboarding which has login button
         ),
       );
     }
