@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../models/news_article.dart';
+import 'news_detail_screen.dart';
 import '../services/api_news_service.dart';
 
 class CampusNewsScreen extends StatefulWidget {

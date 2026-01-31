@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import '../utils/onboarding_utils.dart';
+
 import '../services/api_auth_service.dart';
 import '../main.dart';
 import 'timetable_screen.dart';
@@ -97,21 +97,7 @@ class _HomeScreenState extends State<HomeScreen> {
     
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF101622) : const Color(0xFFF5F6F8),
-      // Debug: Floating button to reset onboarding
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          await OnboardingUtils.resetOnboarding();
-          if (context.mounted) {
-            Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(builder: (_) => const SplashScreen()),
-              (route) => false,
-            );
-          }
-        },
-        icon: const Icon(Icons.refresh),
-        label: const Text('Reset Onboarding'),
-        backgroundColor: Colors.red,
-      ),
+
       body: SafeArea(
         child: Column(
           children: [
