@@ -7,6 +7,7 @@ import 'planner_screen.dart';
 import 'past_questions_screen.dart';
 import 'upload_past_question_screen.dart';
 import 'profile_screen.dart';
+import 'campus_news_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -640,7 +641,11 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             TextButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const CampusNewsScreen()),
+                );
+              },
               child: const Text(
                 'See all',
                 style: TextStyle(
