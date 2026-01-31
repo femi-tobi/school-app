@@ -27,7 +27,7 @@ class _CampusNewsScreenState extends State<CampusNewsScreen> {
       title: 'Extended Library Hours for Exam Season',
       description: 'Starting next Monday, the main library will remain open 24/7 to support students during the final examination period. Please remember your ID cards for entry.',
       time: '2 hours ago',
-      imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAvXhOx6tGlUnm8eX10o09_mINyN6rWNdB1y97nmBhQc9LF6Doou_zB5f-fWmT98CXd9je8xrdCgfnnLtUbNsmRNbPus8kkaYK0PV2Cvt1egphc3XfXt-1lckOfTPySz_nrrbKEe-nvVe0WPsyrfG89obUXpef3D1iQl0JADWRHayWWaOhcY4EjUWqS8jmGl8SnYRFPe_h9xx3qvfYQeKrZjYBwBnvfFXQwSbnhhrnIXkswqO5J7PVyYvEj8EJ-SSdDOjTFSyXE0Mo',
+      imageUrl: 'https://picsum.photos/seed/library_news/400/200',
       categoryColor: const Color(0xFF0d59f2),
     ),
     NewsArticle(
@@ -35,7 +35,7 @@ class _CampusNewsScreenState extends State<CampusNewsScreen> {
       title: 'Registration for Inter-College Sports Fest Open',
       description: 'The annual sports extravaganza is back! Sign up for football, basketball, and track events through the student portal before Friday.',
       time: 'Yesterday',
-      imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBdL_rDWQ3lAkSqWMm8dwQV-2J_KdGSS2Y6uhzzD1BMcfOtqXkvXAg-aiTY7WEX00yFQZ4JE-NUvEAYn20nObfAMaaZCU_Q-14j2zAiFI4Th-pKlbhDTvRFQWYTcn5lFFpv1o7eE_NAZ7EdNG7OdNJrrSBH0w3UW2XUtwGn7OTMujhTNAfUalZ1cOXfLaHNlf7AEpeBvHmchAZL81n1p8_yD5wTZe4omt3_ORhAnJRppqAcR9mAig2c-GcyKLi8om_UJmqb1RNnmFY',
+      imageUrl: 'https://picsum.photos/seed/sports_news/400/200',
       categoryColor: Colors.green,
     ),
     NewsArticle(
@@ -43,7 +43,7 @@ class _CampusNewsScreenState extends State<CampusNewsScreen> {
       title: 'Server Maintenance: LMS down this Saturday',
       description: 'Our IT department will be conducting essential server upgrades this Saturday from 10:00 PM to 4:00 AM. Access to the Learning Management System will be unavailable.',
       time: '2 days ago',
-      imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBeu2sjYd31Wi4PRK5J3X_OJYYoB48tZhfDVFaqvWy8fGyZBM1CUO1icomPS-4KLuD1NLshgfGiwALheCwc3vcpMbyYqfuG4jpr8Hy7QI-w59T2Vsp4h4PnrKnpISdDR2XXb9BJ8ZoNLUPHXD4QXrkQrtiFc1O7ngFcy6Xb6cOHUBBTu5adr-q9qtMk5WCKQhdFb-zliLVvs4um4c8TSj-OUZcBv-rB9ldUetm2cQcDWn5B3DHq3ihivYSh3F4mujzB-KIC83X5Kjo',
+      imageUrl: 'https://picsum.photos/seed/tech_news/400/200',
       categoryColor: Colors.orange,
     ),
     NewsArticle(
@@ -51,7 +51,7 @@ class _CampusNewsScreenState extends State<CampusNewsScreen> {
       title: 'New Internship Opportunities at Tech Hub',
       description: 'Over 20 new internship placements have been listed for Engineering and Computer Science students. Check the careers portal for application deadlines.',
       time: '3 days ago',
-      imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBfScWBC6pW7XFg0f2jeDiS-rrlLS9NPok4JhydaOqgzXa1MIHoHaTfzSsCL0_zdrADTaQl1uz8o9qvEAhRB_lnc2VXT1vqoiwSQP0nhsD5yZjrQoTT3l2DIH2TSnso1eLmEbuxAJQqv3RKgz0AVtluh2sYI2KVplprERG1h8NL40uV9_Uy0a2U5oSiiEnFNhjrjt8RU6-o8nqYH-PY40QKii4oh5ju0-Kb-xzf3xzYdTJ-0ft4WxWq0xVEmV1yJPR8JC5_3AC9znU',
+      imageUrl: 'https://picsum.photos/seed/campus_life/400/200',
       categoryColor: Colors.purple,
     ),
   ];

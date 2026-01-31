@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../services/api_auth_service.dart';
 import 'onboarding/onboarding_screen.dart';
+import 'edit_profile_screen.dart';
+import 'change_password_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -23,24 +25,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadUserData() async {
+    print('DEBUG: Loading user data for ProfileScreen');
+    
     // First try to get cached user data
     final cachedUser = await _authService.getCurrentUser();
+    print('DEBUG: Cached user data: $cachedUser');
+    
     if (cachedUser != null) {
-      setState(() {
-        _userData = cachedUser;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _userData = cachedUser;
+          _isLoading = false;
+        });
+      }
     }
 
     // Then fetch fresh data from API
-    final result = await _authService.fetchCurrentUser();
-    if (result['success'] == true && mounted) {
-      setState(() {
-        _userData = result['user'];
-        _isLoading = false;
-      });
-    } else if (mounted) {
-      setState(() => _isLoading = false);
+    try {
+      final result = await _authService.fetchCurrentUser();
+      print('DEBUG: API fetch result: $result');
+      
+      if (result['success'] == true && result['user'] != null && mounted) {
+        setState(() {
+          _userData = result['user'];
+          _isLoading = false;
+        });
+      } else if (mounted) {
+        // If API fails but we have cached data, keep it. 
+        // If we have no data, stop loading.
+        setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      print('DEBUG: Error fetching user data: $e');
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -459,22 +476,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildPreferencesSection(bool isDark) {
     final preferences = [
       {
+        'icon': Icons.person_outline,
+        'color': Colors.blue,
+        'title': 'Edit Profile',
+        'subtitle': 'Update your personal information',
+        'route': 'edit_profile',
+      },
+      {
+        'icon': Icons.lock_outline,
+        'color': Colors.orange,
+        'title': 'Change Password',
+        'subtitle': 'Update your account password',
+        'route': 'change_password',
+      },
+      {
         'icon': Icons.notifications,
         'color': Colors.red,
         'title': 'Notification Preferences',
         'subtitle': 'Manage alerts and activity updates',
+        'route': null,
       },
       {
         'icon': Icons.shield,
         'color': Colors.indigo,
         'title': 'Data & Privacy',
         'subtitle': 'Control your data visibility',
+        'route': null,
       },
       {
         'icon': Icons.help_center,
         'color': Colors.grey,
         'title': 'Support & FAQ',
         'subtitle': 'Need help? We are here for you',
+        'route': null,
       },
     ];
 
@@ -518,7 +552,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 final isLast = index == preferences.length - 1;
                 
                 return InkWell(
-                  onTap: () {},
+                  onTap: () {
+                    final route = pref['route'];
+                    if (route == 'edit_profile') {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const EditProfileScreen()),
+                      ).then((updated) {
+                        if (updated == true) _loadUserData(); // Refresh data if updated
+                      });
+                    } else if (route == 'change_password') {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const ChangePasswordScreen()),
+                      );
+                    }
+                  },
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(

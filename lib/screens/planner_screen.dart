@@ -30,7 +30,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
       endTime: '15:30',
       durationMinutes: 90,
       status: 'in_progress',
-      imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAiy4Sc3VnVjYJiLpC6emcsXHUrZJbqt7qURr22NSPLLiTjN6ux1VIhQrA0kI_f35gNrwuLHFTKD2GsJjcZp3wUZQ-nnO3_1qp2fXc6utABMiGk-9fahDlvfzjEhesNsdiY-cUPrP10OwmiTs_4l6mcQABpBY0tHS20GmqY8v3umSPhFTVIhfZxBTPaQg7X4lYQsCFh00H8TMVYEU-clQdJYKwmWDkm1EUfejXqZrxV1klkwN6Rowdc9RzGWSbQDJVFbyn8z3FU_20',
+      imageUrl: 'https://picsum.photos/seed/planner1/400/400',
     ),
     StudySession(
       courseCode: 'ECON',
@@ -40,7 +40,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
       endTime: '17:00',
       durationMinutes: 60,
       status: 'upcoming',
-      imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDVJxRjfpkKFrx_qaJInXvbCTjO57HtH54Zvnsxt4DUSDHI14YHeEwATT4L0NBit8ez6QJ-VSgcf2h1uMIa46VkBRw6MpuzxOhH7UEhCZHSrHq4GzIwb_e3EzZ13srhjkjpVUwzQ5CWw9by4NyzBM8pMFYiMARWNhpzfQ4Zg9Nmvaby1CTzFKy5y0DGzRBZqE2jcKOXhFE9jHlJNCCYYULWuJ59sSX8FVx0agiAh18OJqmB7nYxIRREOUgjYgbdNn3xKS809staMq0',
+      imageUrl: 'https://picsum.photos/seed/planner2/400/400',
     ),
   ];
 

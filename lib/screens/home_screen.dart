@@ -661,21 +661,21 @@ class _HomeScreenState extends State<HomeScreen> {
         'categoryColor': const Color(0xFF0d59f2),
         'title': 'Extended Library Hours for Exam Season',
         'time': '2 hours ago',
-        'image': 'https://lh3.googleusercontent.com/aida-public/AB6AXuAvXhOx6tGlUnm8eX10o09_mINyN6rWNdB1y97nmBhQc9LF6Doou_zB5f-fWmT98CXd9je8xrdCgfnnLtUbNsmRNbPus8kkaYK0PV2Cvt1egphc3XfXt-1lckOfTPySz_nrrbKEe-nvVe0WPsyrfG89obUXpef3D1iQl0JADWRHayWWaOhcY4EjUWqS8jmGl8SnYRFPe_h9xx3qvfYQeKrZjYBwBnvfFXQwSbnhhrnIXkswqO5J7PVyYvEj8EJ-SSdDOjTFSyXE0Mo',
+        'image': 'https://picsum.photos/seed/library/400/200',
       },
       {
         'category': 'EVENTS',
         'categoryColor': Colors.green,
         'title': 'Registration for Inter-College Sports Fest Open',
         'time': 'Yesterday',
-        'image': 'https://lh3.googleusercontent.com/aida-public/AB6AXuBdL_rDWQ3lAkSqWMm8dwQV-2J_KdGSS2Y6uhzzD1BMcfOtqXkvXAg-aiTY7WEX00yFQZ4JE-NUvEAYn20nObfAMaaZCU_Q-14j2zAiFI4Th-pKlbhDTvRFQWYTcn5lFFpv1o7eE_NAZ7EdNG7OdNJrrSBH0w3UW2XUtwGn7OTMujhTNAfUalZ1cOXfLaHNlf7AEpeBvHmchAZL81n1p8_yD5wTZe4omt3_ORhAnJRppqAcR9mAig2c-GcyKLi8om_UJmqb1RNnmFY',
+        'image': 'https://picsum.photos/seed/sports/400/200',
       },
       {
         'category': 'MAINTENANCE',
         'categoryColor': Colors.orange,
         'title': 'Server Maintenance: LMS down this Saturday',
         'time': '2 days ago',
-        'image': 'https://lh3.googleusercontent.com/aida-public/AB6AXuBeu2sjYd31Wi4PRK5J3X_OJYYoB48tZhfDVFaqvWy8fGyZBM1CUO1icomPS-4KLuD1NLshgfGiwALheCwc3vcpMbyYqfuG4jpr8Hy7QI-w59T2Vsp4h4PnrKnpISdDR2XXb9BJ8ZoNLUPHXD4QXrkQrtiFc1O7ngFcy6Xb6cOHUBBTu5adr-q9qtMk5WCKQhdFb-zliLVvs4um4c8TSj-OUZcBv-rB9ldUetm2cQcDWn5B3DHq3ihivYSh3F4mujzB-KIC83X5Kjo',
+        'image': 'https://picsum.photos/seed/tech/400/200',
       },
     ];
 

@@ -166,7 +166,12 @@ class ApiAuthService {
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-        final user = responseData['data'] ?? responseData['user'] ?? responseData;
+        var user = responseData['data'] ?? responseData['user'] ?? responseData;
+        
+        // Unwrap if user object is nested (e.g. data: { user: {...} })
+        if (user is Map && user.containsKey('user')) {
+          user = user['user'];
+        }
         
         // Update local storage with fresh user data
         if (user != null) {

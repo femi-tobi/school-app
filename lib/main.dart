@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'services/api_auth_service.dart';
 import 'utils/onboarding_utils.dart';
 import 'screens/onboarding/onboarding_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/home_screen.dart';
 
 void main() async {
@@ -58,6 +59,8 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
+
+
 class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
@@ -79,14 +82,20 @@ class _SplashScreenState extends State<SplashScreen> {
       return;
     }
     
-    // Onboarding complete - check if user is logged in
+    // Onboarding complete - check if user is logged in AND "Remember Me" is enabled
     final authService = ApiAuthService();
     final isLoggedIn = await authService.isLoggedIn();
+    
+    final prefs = await SharedPreferences.getInstance();
+    final rememberMe = prefs.getBool('remember_me') ?? false;
+    
+    // Only auto-login if token exists AND user checked "Remember Me"
+    final shouldAutoLogin = isLoggedIn && rememberMe;
     
     if (mounted) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (_) => isLoggedIn
+          builder: (_) => shouldAutoLogin
               ? const HomeScreen()
               : const OnboardingScreen(), // Show onboarding which has login button
         ),

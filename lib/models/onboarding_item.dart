@@ -35,7 +35,7 @@ final List<OnboardingItem> onboardingItems = [
   OnboardingItem(
     title: 'Study smarter,\npass better',
     description: 'Timetables, past questions & study plans — built specifically for students to excel.',
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDVyVB5cVkiyVVJEboymSJewYIC-XIRwnE7PMLWG3J9ENetgWM4UIyb9m32Q-5TF2Q7fTchDN8wKnr1nn_tmWnJPZDfbAlTwaIppSz0JmNftDlqX_oSroODH9rqredpSm62Iqf8aeSxNQKyfiQdhbX_Ttk7PiVuBHLZxaPhHqR7kpdCgwDFZWtxTdyzX7yy3y16VCDv7NgjzwUKQ2NG0a1TzZ7gDj0dn8GUl5SrgXSSXAMqNPqXLOq2_JCbyGhVl9Tstr_NIeed8jg',
+    imageUrl: 'https://picsum.photos/seed/onboarding1/600/600',
     floatingElements: [
       FloatingElement(
         icon: 'calendar_today',
@@ -54,7 +54,7 @@ final List<OnboardingItem> onboardingItems = [
   OnboardingItem(
     title: 'Ace your exams',
     description: 'Access thousands of verified past questions and solutions anytime, anywhere.',
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDVyVB5cVkiyVVJEboymSJewYIC-XIRwnE7PMLWG3J9ENetgWM4UIyb9m32Q-5TF2Q7fTchDN8wKnr1nn_tmWnJPZDfbAlTwaIppSz0JmNftDlqX_oSroODH9rqredpSm62Iqf8aeSxNQKyfiQdhbX_Ttk7PiVuBHLZxaPhHqR7kpdCgwDFZWtxTdyzX7yy3y16VCDv7NgjzwUKQ2NG0a1TzZ7gDj0dn8GUl5SrgXSSXAMqNPqXLOq2_JCbyGhVl9Tstr_NIeed8jg',
+    imageUrl: 'https://picsum.photos/seed/onboarding2/600/600',
     floatingElements: [
       FloatingElement(
         icon: 'description',
@@ -79,7 +79,7 @@ final List<OnboardingItem> onboardingItems = [
   OnboardingItem(
     title: 'Track your progress',
     description: 'Build study streaks, set goals, and manage your time effectively with our smart planner.',
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDVyVB5cVkiyVVJEboymSJewYIC-XIRwnE7PMLWG3J9ENetgWM4UIyb9m32Q-5TF2Q7fTchDN8wKnr1nn_tmWnJPZDfbAlTwaIppSz0JmNftDlqX_oSroODH9rqredpSm62Iqf8aeSxNQKyfiQdhbX_Ttk7PiVuBHLZxaPhHqR7kpdCgwDFZWtxTdyzX7yy3y16VCDv7NgjzwUKQ2NG0a1TzZ7gDj0dn8GUl5SrgXSSXAMqNPqXLOq2_JCbyGhVl9Tstr_NIeed8jg',
+    imageUrl: 'https://picsum.photos/seed/onboarding3/600/600',
     floatingElements: [
       FloatingElement(
         icon: 'timer',
