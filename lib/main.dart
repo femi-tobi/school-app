@@ -1,0 +1,89 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'utils/onboarding_utils.dart';
+import 'screens/onboarding/onboarding_screen.dart';
+import 'screens/home_screen.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Firebase (required for authentication)
+  // TODO: Uncomment this line after Firebase setup is complete
+  // Follow the guide: firebase_setup_guide.md
+  // await Firebase.initializeApp();
+  
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'School App',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF0d59f2),
+          brightness: Brightness.light,
+          primary: const Color(0xFF0d59f2),
+        ),
+        scaffoldBackgroundColor: const Color(0xFFF5F6F8),
+        textTheme: GoogleFonts.interTextTheme(),
+      ),
+      darkTheme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF0d59f2),
+          brightness: Brightness.dark,
+          primary: const Color(0xFF0d59f2),
+        ),
+        scaffoldBackgroundColor: const Color(0xFF101622),
+        textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
+      ),
+      themeMode: ThemeMode.system,
+      home: const SplashScreen(),
+    );
+  }
+}
+
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _checkOnboardingStatus();
+  }
+
+  Future<void> _checkOnboardingStatus() async {
+    final isComplete = await OnboardingUtils.isOnboardingComplete();
+    
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => isComplete
+              ? const HomeScreen()
+              : const OnboardingScreen(),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+  }
+}
