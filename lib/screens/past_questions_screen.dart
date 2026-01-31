@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/past_question_document.dart';
+import 'upload_past_question_screen.dart';
 
 class PastQuestionsScreen extends StatefulWidget {
   const PastQuestionsScreen({super.key});
@@ -87,6 +88,18 @@ class _PastQuestionsScreenState extends State<PastQuestionsScreen> {
             ),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const UploadPastQuestionScreen(),
+            ),
+          );
+        },
+        backgroundColor: const Color(0xFF0d59f2),
+        icon: const Icon(Icons.upload_file),
+        label: const Text('Upload'),
       ),
       bottomNavigationBar: _buildBottomNav(isDark),
     );

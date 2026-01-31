@@ -5,6 +5,8 @@ import '../main.dart';
 import 'timetable_screen.dart';
 import 'planner_screen.dart';
 import 'past_questions_screen.dart';
+import 'upload_past_question_screen.dart';
+import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -548,6 +550,11 @@ class _HomeScreenState extends State<HomeScreen> {
               Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => const PastQuestionsScreen()),
               );
+            } else if (index == 3) {
+              // Navigate to Upload Past Question screen
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const UploadPastQuestionScreen()),
+              );
             }
           },
           child: Column(
@@ -745,9 +752,16 @@ class _HomeScreenState extends State<HomeScreen> {
               final isSelected = _selectedIndex == item['index'];
               return GestureDetector(
                 onTap: () {
-                  setState(() {
-                    _selectedIndex = item['index'] as int;
-                  });
+                  if (item['index'] == 3) {
+                    // Navigate to Profile/Settings screen
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                    );
+                  } else {
+                    setState(() {
+                      _selectedIndex = item['index'] as int;
+                    });
+                  }
                 },
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
