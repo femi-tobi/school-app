@@ -281,3 +281,170 @@ Future enhancements planned:
 ---
 
 **Made with ❤️ using Flutter**
+
+
+
+📚 Past Questions Module
+Upload Past Questions
+Endpoint needed: POST /api/past-questions/upload
+
+json
+{
+  "file": "multipart/form-data",
+  "courseName": "string",
+  "courseCode": "string", 
+  "semester": "string",
+  "level": "string",
+  "tags": ["array"],
+  "isPaid": "boolean",
+  "price": "number"
+}
+Fetch Past Questions
+Endpoint needed: GET /api/past-questions
+
+json
+// Response
+{
+  "questions": [
+    {
+      "id": "string",
+      "title": "string",
+      "course": "string",
+      "semester": "string",
+      "level": "string",
+      "downloads": "number",
+      "rating": "number",
+      "fileUrl": "string",
+      "price": "number",
+      "tags": ["array"]
+    }
+  ]
+}
+Download/Purchase Past Question
+Endpoint needed: POST /api/past-questions/:id/download
+
+📰 Campus News Module
+Fetch News Articles
+Endpoint needed: GET /api/news
+
+json
+// Query params: ?category=events&search=exam
+// Response
+{
+  "articles": [
+    {
+      "id": "string",
+      "category": "string",
+      "title": "string",
+      "description": "string",
+      "content": "string",
+      "imageUrl": "string",
+      "publishedAt": "timestamp",
+      "author": "string"
+    }
+  ]
+}
+Fetch Single Article
+Endpoint needed: GET /api/news/:id
+
+👤 Profile & Wallet Module
+Get User Profile
+Endpoint needed: GET /api/users/profile
+
+json
+{
+  "name": "string",
+  "email": "string",
+  "university": "string",
+  "department": "string",
+  "level": "string",
+  "avatarUrl": "string"
+}
+Update Profile
+Endpoint needed: PUT /api/users/profile
+
+Get Wallet Balance
+Endpoint needed: GET /api/wallet/balance
+
+json
+{
+  "balance": "number",
+  "currency": "NGN",
+  "earnings": [
+    {
+      "source": "string",
+      "amount": "number",
+      "date": "timestamp"
+    }
+  ]
+}
+Withdraw Funds
+Endpoint needed: POST /api/wallet/withdraw
+
+json
+{
+  "amount": "number",
+  "accountDetails": {
+    "bankName": "string",
+    "accountNumber": "string"
+  }
+}
+Get Subscription Status
+Endpoint needed: GET /api/subscription
+
+json
+{
+  "plan": "premium",
+  "expiresAt": "timestamp",
+  "isActive": "boolean"
+}
+📅 Timetable Module
+Get Timetable
+Endpoint needed: GET /api/timetable
+
+json
+{
+  "schedule": [
+    {
+      "day": "string",
+      "time": "string",
+      "course": "string",
+      "venue": "string",
+      "lecturer": "string"
+    }
+  ]
+}
+Update Timetable
+Endpoint needed: PUT /api/timetable
+
+📝 Planner/Tasks Module
+Get Tasks
+Endpoint needed: GET /api/tasks
+
+Create Task
+Endpoint needed: POST /api/tasks
+
+Update Task
+Endpoint needed: PUT /api/tasks/:id
+
+Delete Task
+Endpoint needed: DELETE /api/tasks/:id
+
+🏠 Home Screen Analytics
+Get Dashboard Stats
+Endpoint needed: GET /api/dashboard/stats
+
+json
+{
+  "studyStreak": "number",
+  "tasksCompleted": "number",
+  "minutesStudied": "number",
+  "upcomingEvents": ["array"]
+}
+🔔 Notifications
+Get Notifications
+Endpoint needed: GET /api/notifications
+
+Mark as Read
+Endpoint needed: PUT /api/notifications/:id/read
+

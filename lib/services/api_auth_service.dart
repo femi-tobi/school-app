@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiAuthService {
   // TODO: Replace with your actual API base URL
-  static const String baseUrl = 'https://your-api.com/api';
+  static const String baseUrl = 'https://backend-proj-50kp.onrender.com';
   
   // Store user session
   Future<void> _saveUserSession(String token, Map<String, dynamic> user) async {
@@ -42,7 +42,7 @@ class ApiAuthService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/auth/register'),
+        Uri.parse('$baseUrl/api/auth/signup'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'email': email,
@@ -72,7 +72,7 @@ class ApiAuthService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/auth/login'),
+        Uri.parse('$baseUrl/api/users/login'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'email': email,
@@ -102,7 +102,7 @@ class ApiAuthService {
   Future<Map<String, dynamic>> resetPassword({required String email}) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/auth/reset-password'),
+        Uri.parse('$baseUrl/reset-password'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email}),
       );
