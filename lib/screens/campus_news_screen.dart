@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/news_article.dart';
-import 'news_detail_screen.dart';
+import '../services/api_news_service.dart';
 
 class CampusNewsScreen extends StatefulWidget {
   const CampusNewsScreen({super.key});
@@ -12,49 +11,67 @@ class CampusNewsScreen extends StatefulWidget {
 class _CampusNewsScreenState extends State<CampusNewsScreen> {
   int _selectedFilterIndex = 0;
   final TextEditingController _searchController = TextEditingController();
+  final ApiNewsService _newsService = ApiNewsService();
+  
+  List<String> _filters = ['All'];
+  List<NewsArticle> _allArticles = [];
+  List<NewsArticle> _displayedArticles = [];
+  bool _isLoading = true;
+  String? _errorMessage;
 
-  final List<String> _filters = [
-    'All',
-    'Events',
-    'Academic',
-    'Maintenance',
-    'Sports',
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+    _searchController.addListener(_filterArticles);
+  }
 
-  final List<NewsArticle> _newsArticles = [
-    NewsArticle(
-      category: 'LIBRARY UPDATE',
-      title: 'Extended Library Hours for Exam Season',
-      description: 'Starting next Monday, the main library will remain open 24/7 to support students during the final examination period. Please remember your ID cards for entry.',
-      time: '2 hours ago',
-      imageUrl: 'https://picsum.photos/seed/library_news/400/200',
-      categoryColor: const Color(0xFF0d59f2),
-    ),
-    NewsArticle(
-      category: 'EVENTS',
-      title: 'Registration for Inter-College Sports Fest Open',
-      description: 'The annual sports extravaganza is back! Sign up for football, basketball, and track events through the student portal before Friday.',
-      time: 'Yesterday',
-      imageUrl: 'https://picsum.photos/seed/sports_news/400/200',
-      categoryColor: Colors.green,
-    ),
-    NewsArticle(
-      category: 'MAINTENANCE',
-      title: 'Server Maintenance: LMS down this Saturday',
-      description: 'Our IT department will be conducting essential server upgrades this Saturday from 10:00 PM to 4:00 AM. Access to the Learning Management System will be unavailable.',
-      time: '2 days ago',
-      imageUrl: 'https://picsum.photos/seed/tech_news/400/200',
-      categoryColor: Colors.orange,
-    ),
-    NewsArticle(
-      category: 'ACADEMIC',
-      title: 'New Internship Opportunities at Tech Hub',
-      description: 'Over 20 new internship placements have been listed for Engineering and Computer Science students. Check the careers portal for application deadlines.',
-      time: '3 days ago',
-      imageUrl: 'https://picsum.photos/seed/campus_life/400/200',
-      categoryColor: Colors.purple,
-    ),
-  ];
+  Future<void> _loadData() async {
+    try {
+      setState(() => _isLoading = true);
+      
+      final results = await Future.wait([
+        _newsService.getCategories(),
+        _newsService.getNews(),
+      ]);
+      
+      if (!mounted) return;
+
+      final categories = results[0] as List<String>;
+      final articles = results[1] as List<NewsArticle>;
+
+      setState(() {
+        _filters = ['All', ...categories];
+        _allArticles = articles;
+        _displayedArticles = articles;
+        _isLoading = false;
+        _errorMessage = null;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Failed to load news. Please try again.';
+      });
+    }
+  }
+
+  void _filterArticles() {
+    final query = _searchController.text.toLowerCase();
+    final selectedCategory = _filters[_selectedFilterIndex];
+
+    setState(() {
+      _displayedArticles = _allArticles.where((article) {
+        final matchesSearch = article.title.toLowerCase().contains(query) ||
+            article.description.toLowerCase().contains(query);
+        
+        final matchesCategory = selectedCategory == 'All' || 
+            article.category.toLowerCase() == selectedCategory.toLowerCase();
+            
+        return matchesSearch && matchesCategory;
+      }).toList();
+    });
+  }
 
   @override
   void dispose() {
@@ -214,6 +231,7 @@ class _CampusNewsScreenState extends State<CampusNewsScreen> {
                 setState(() {
                   _selectedFilterIndex = index;
                 });
+                _filterArticles();
               },
               backgroundColor: isDark ? const Color(0xFF1a1f2e) : Colors.white,
               selectedColor: const Color(0xFF0d59f2),
@@ -236,10 +254,51 @@ class _CampusNewsScreenState extends State<CampusNewsScreen> {
   }
 
   Widget _buildNewsArticles(bool isDark) {
+    if (_isLoading) {
+      return const Padding(
+        padding: EdgeInsets.only(top: 32),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_errorMessage != null) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 32, left: 16, right: 16),
+        child: Column(
+          children: [
+            Icon(Icons.error_outline, size: 48, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              _errorMessage!,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600]),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadData,
+              child: const Text('Try Again'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_displayedArticles.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 32),
+        child: Center(
+          child: Text(
+            'No news found',
+            style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600]),
+          ),
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
-        children: _newsArticles.map((article) {
+        children: _displayedArticles.map((article) {
           return Padding(
             padding: const EdgeInsets.only(bottom: 16),
             child: _buildNewsCard(article, isDark),

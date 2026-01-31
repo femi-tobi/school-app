@@ -85,18 +85,7 @@ class NewsDetailScreen extends StatelessWidget {
                       
                       // Article Body
                       Text(
-                        'To better support students during the upcoming mid-semester examination period, the University Library has announced extended operational hours starting next Monday.',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: isDark ? Colors.grey.shade300 : Colors.grey.shade600,
-                          height: 1.6,
-                        ),
-                      ),
-                      
-                      const SizedBox(height: 16),
-                      
-                      Text(
-                        'The Central Library and all faculty-specific reading rooms will now remain open until midnight on weekdays and until 8:00 PM on weekends. This initiative aims to provide a quiet, resource-rich environment for those intensive late-night study sessions.',
+                        article.description,
                         style: TextStyle(
                           fontSize: 16,
                           color: isDark ? Colors.grey.shade300 : Colors.grey.shade600,
@@ -105,65 +94,6 @@ class NewsDetailScreen extends StatelessWidget {
                       ),
                       
                       const SizedBox(height: 24),
-                      
-                      // Quote
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF1a1f2e) : Colors.grey.shade50,
-                          border: Border(
-                            left: BorderSide(
-                              color: Theme.of(context).colorScheme.primary,
-                              width: 4,
-                            ),
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '"We recognize the pressure students face during finals. By extending our hours, we hope to alleviate some of that stress and provide the space needed for academic success."',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                fontStyle: FontStyle.italic,
-                                color: isDark ? Colors.grey.shade200 : Colors.grey.shade700,
-                                height: 1.5,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              '— Dr. Sarah Chen, Chief Librarian',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: isDark ? Colors.grey.shade400 : Colors.grey.shade500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      
-                      const SizedBox(height: 16),
-                      
-                      Text(
-                        'In addition to extended hours, the library cafe will also offer 20% discounts on coffee and tea after 8:00 PM. Additional security personnel have been assigned to ensure a safe environment for students departing late at night.',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: isDark ? Colors.grey.shade300 : Colors.grey.shade600,
-                          height: 1.6,
-                        ),
-                      ),
-                      
-                      const SizedBox(height: 16),
-                      
-                      Text(
-                        'New Schedule Summary:',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? Colors.grey.shade300 : Colors.grey.shade600,
-                        ),
-                      ),
                       
                       const SizedBox(height: 8),
                       
