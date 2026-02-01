@@ -3,7 +3,16 @@ import '../models/timetable_class.dart';
 import '../services/api_timetable_service.dart';
 
 class AddTimetableEntryScreen extends StatefulWidget {
-  const AddTimetableEntryScreen({super.key});
+  final TimetableClass? classToEdit;
+  final int? dayIndex;
+  final int? classIndex;
+
+  const AddTimetableEntryScreen({
+    super.key,
+    this.classToEdit,
+    this.dayIndex,
+    this.classIndex,
+  });
 
   @override
   State<AddTimetableEntryScreen> createState() => _AddTimetableEntryScreenState();
@@ -30,6 +39,47 @@ class _AddTimetableEntryScreenState extends State<AddTimetableEntryScreen> {
     'Saturday',
     'Sunday'
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.classToEdit != null) {
+      final cls = widget.classToEdit!;
+      _courseCodeController.text = cls.courseCode;
+      _courseNameController.text = cls.courseName;
+      _locationController.text = cls.location;
+      _professorController.text = cls.professor;
+      
+      // Parse day index back to string
+      if (cls.dayIndex >= 0 && cls.dayIndex < _days.length) {
+        _selectedDay = _days[cls.dayIndex];
+      }
+      
+      // Parse time strings back to TimeOfDay
+      _startTime = _parseTime(cls.startTime);
+      _endTime = _parseTime(cls.endTime);
+    }
+  }
+
+  TimeOfDay _parseTime(String timeString) {
+    try {
+      // Expected format: "08:00 AM" or similar
+      final parts = timeString.split(' '); // ["08:00", "AM"]
+      final timeParts = parts[0].split(':'); // ["08", "00"]
+      int hour = int.parse(timeParts[0]);
+      int minute = int.parse(timeParts[1]);
+      
+      if (parts.length > 1 && parts[1] == 'PM' && hour != 12) {
+        hour += 12;
+      } else if (parts.length > 1 && parts[1] == 'AM' && hour == 12) {
+        hour = 0;
+      }
+      
+      return TimeOfDay(hour: hour, minute: minute);
+    } catch (e) {
+      return TimeOfDay.now();
+    }
+  }
 
   @override
   void dispose() {
@@ -62,7 +112,10 @@ class _AddTimetableEntryScreenState extends State<AddTimetableEntryScreen> {
         _isLoading = true;
       });
 
+      final dayIndex = _days.indexOf(_selectedDay);
+
       final newClass = TimetableClass(
+        dayIndex: dayIndex, // Add dayIndex
         courseCode: _courseCodeController.text,
         courseName: _courseNameController.text,
         startTime: _formatTimeOfDay(_startTime),
@@ -74,7 +127,25 @@ class _AddTimetableEntryScreenState extends State<AddTimetableEntryScreen> {
       );
 
       final apiService = ApiTimetableService();
-      final success = await apiService.addTimetableEntry(newClass);
+      bool success;
+      
+      if (widget.classToEdit != null && widget.classIndex != null) {
+        // Update existing
+        success = await apiService.updateTimetableEntry(
+          widget.dayIndex ?? dayIndex, // Use original day index for path if needed, or new one? API likely wants path to find it. 
+          // Wait, if I change the day, the path dayIndex refers to OLD location. 
+          // But the BODY dayIndex is the NEW location.
+          // The API route is PUT /class/:dayIndex/:classIndex. 
+          // Assuming params are for FINDING the record.
+          widget.classIndex!, 
+          newClass
+        );
+      } else {
+        // Add new
+        success = await apiService.addTimetableEntry(newClass);
+      }
+
+      print('${widget.classToEdit != null ? "Update" : "Add"} timetable entry success: $success');
 
       setState(() {
         _isLoading = false;
@@ -83,12 +154,12 @@ class _AddTimetableEntryScreenState extends State<AddTimetableEntryScreen> {
       if (mounted) {
         if (success) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Class added successfully')),
+            SnackBar(content: Text('Class ${widget.classToEdit != null ? "updated" : "added"} successfully')),
           );
           Navigator.of(context).pop(true); // Return true to trigger refresh
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to add class')),
+            SnackBar(content: Text('Failed to ${widget.classToEdit != null ? "update" : "add"} class')),
           );
         }
       }
@@ -106,7 +177,7 @@ class _AddTimetableEntryScreenState extends State<AddTimetableEntryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add New Class'),
+        title: Text(widget.classToEdit != null ? 'Edit Class' : 'Add New Class'),
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: Theme.of(context).brightness == Brightness.dark

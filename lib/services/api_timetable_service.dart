@@ -15,81 +15,103 @@ class ApiTimetableService {
     };
   }
 
-  // Get timetable for a specific day or all days
+  // Get full timetable
   Future<Map<int, List<TimetableClass>>> getTimetable() async {
     try {
-      // TODO: Replace with actual endpoint when available on backend
-      // For now we will return some mock data but simulated as an API call
-      // In a real app, this would be:
-      /*
       final headers = await _getHeaders();
       final response = await http.get(
         Uri.parse('$baseUrl/api/timetable'),
         headers: headers,
       );
 
+      print('Get Timetable Status: ${response.statusCode}');
+      
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        // data processing to Map<int, List<TimetableClass>>
+        final Map<int, List<TimetableClass>> timetable = {};
+        
+        // Handle response structure logic based on API return
+        // Assuming API returns a list of classes or a map keyed by dayIndex
+        if (data is List) {
+          for (var item in data) {
+            final entry = TimetableClass.fromJson(item);
+            if (!timetable.containsKey(entry.dayIndex)) {
+              timetable[entry.dayIndex] = [];
+            }
+            timetable[entry.dayIndex]!.add(entry);
+          }
+        } else if (data is Map) {
+             // Handle if keys are day indices
+             data.forEach((key, value) {
+               final dayIdx = int.tryParse(key.toString()) ?? 0;
+               if (value is List) {
+                 timetable[dayIdx] = value.map((e) => TimetableClass.fromJson(e)).toList();
+               }
+             });
+        }
+        
+        return timetable;
       }
-      */
-      
-      // Simulating network delay
-      await Future.delayed(const Duration(milliseconds: 800));
-
-      // Mock data response
-      return {
-        2: [ // Wednesday
-          TimetableClass(
-            courseCode: 'PHY 101',
-            courseName: 'General Physics',
-            startTime: '08:00 AM',
-            endTime: '10:00 AM',
-            location: 'Hall A',
-            professor: 'Prof. A.S. Okoro',
-            iconName: 'science',
-            accentColor: 'primary',
-          ),
-          TimetableClass(
-            courseCode: 'MAT 102',
-            courseName: 'Calculus II',
-            startTime: '12:00 PM',
-            endTime: '02:00 PM',
-            location: 'CBT Centre',
-            professor: 'Dr. J.O. Mensah',
-            iconName: 'calculate',
-            accentColor: 'emerald',
-          ),
-          TimetableClass(
-            courseCode: 'CHM 101',
-            courseName: 'General Chemistry',
-            startTime: '03:00 PM',
-            endTime: '05:00 PM',
-            location: 'Lab 2',
-            professor: 'Dr. B.K. Abiola',
-            iconName: 'science',
-            accentColor: 'amber',
-          ),
-        ],
-        // Other days can be added here
-      };
+      return {};
     } catch (e) {
+      print('Error fetching timetable: $e');
       throw Exception('Failed to load timetable: $e');
     }
   }
 
+  // Add a class
   Future<bool> addTimetableEntry(TimetableClass entry) async {
+    print('Attempting to add timetable entry: ${jsonEncode(entry.toJson())}');
     try {
       final headers = await _getHeaders();
       final response = await http.post(
-        Uri.parse('$baseUrl/api/timetable'),
+        Uri.parse('$baseUrl/api/timetable/class'),
         headers: headers,
         body: jsonEncode(entry.toJson()),
       );
 
+      print('Add Class Response (${response.statusCode}): ${response.body}');
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
+      print('Error adding timetable entry: $e');
       return false;
     }
   }
-}
+  
+  // Update a class
+  Future<bool> updateTimetableEntry(int dayIndex, int classIndex, TimetableClass entry) async {
+     print('Attempting to update class at day $dayIndex index $classIndex');
+     try {
+       final headers = await _getHeaders();
+       // Note: Using PUT /api/timetable/class/:dayIndex/:classIndex as requested
+       final response = await http.put(
+         Uri.parse('$baseUrl/api/timetable/class/$dayIndex/$classIndex'),
+         headers: headers,
+         body: jsonEncode(entry.toJson()),
+       );
+
+       print('Update Class Response (${response.statusCode}): ${response.body}');
+       return response.statusCode == 200;
+     } catch (e) {
+       print('Error updating timetable entry: $e');
+       return false;
+     }
+  }
+
+  // Delete a class
+  Future<bool> deleteTimetableEntry(int dayIndex, int classIndex) async {
+    print('Attempting to delete class at day $dayIndex index $classIndex');
+     try {
+       final headers = await _getHeaders();
+       final response = await http.delete(
+         Uri.parse('$baseUrl/api/timetable/class/$dayIndex/$classIndex'),
+         headers: headers,
+       );
+
+       print('Delete Class Response (${response.statusCode}): ${response.body}');
+       return response.statusCode == 200;
+     } catch (e) {
+       print('Error deleting timetable entry: $e');
+       return false;
+     }
+  }
