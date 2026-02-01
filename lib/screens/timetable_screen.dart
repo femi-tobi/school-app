@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../models/timetable_class.dart';
 import '../services/api_timetable_service.dart';
+import '../services/notification_service.dart';
+import 'add_timetable_entry_screen.dart';
 
 class TimetableScreen extends StatefulWidget {
   const TimetableScreen({super.key});
@@ -34,6 +36,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
   void initState() {
     super.initState();
     _loadTimetable();
+    NotificationService().init();
   }
 
   Future<void> _loadTimetable() async {
@@ -100,8 +103,16 @@ class _TimetableScreenState extends State<TimetableScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // TODO: Add new class
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const AddTimetableEntryScreen(),
+            ),
+          );
+          if (result == true) {
+            _loadTimetable();
+          }
         },
         backgroundColor: const Color(0xFF0d59f2),
         elevation: 8,
@@ -590,7 +601,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () {
-                      // TODO: Set reminder
+                      _setReminder(classInfo);
                     },
                     icon: const Icon(Icons.alarm, size: 18),
                     label: const Text('Set Reminder'),
