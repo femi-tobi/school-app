@@ -743,4 +743,34 @@ class _TimetableScreenState extends State<TimetableScreen> {
       ),
     );
   }
+
+  Future<void> _setReminder(TimetableClass classInfo) async {
+    // Show time picker to select reminder offset
+    final TimeOfDay? time = await showTimePicker(
+      context: context,
+      initialTime: const TimeOfDay(hour: 0, minute: 15),
+      helpText: 'Remind me before class starts',
+    );
+
+    if (time != null) {
+      // For demo purposes, we'll just schedule it 10 seconds from now
+      // In a real app, calculate based on classInfo.startTime
+      final notificationService = NotificationService();
+      await notificationService.scheduleNotification(
+        id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        title: 'Class Reminder: ${classInfo.courseCode}',
+        body: '${classInfo.courseName} starts soon at ${classInfo.location}',
+        scheduledDate: DateTime.now().add(const Duration(seconds: 10)),
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Reminder set for ${classInfo.courseCode}'),
+            backgroundColor: const Color(0xFF0d59f2),
+          ),
+        );
+      }
+    }
+  }
 }

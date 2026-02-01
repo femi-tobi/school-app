@@ -50,6 +50,8 @@ dependencies:
   
   # File picker
   file_picker: ^8.1.6
+  flutter_local_notifications: ^20.0.0
+  timezone: ^0.10.1
 
 dev_dependencies:
   flutter_test:

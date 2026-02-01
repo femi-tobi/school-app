@@ -36,7 +36,7 @@ class NotificationService {
     );
 
     await flutterLocalNotificationsPlugin.initialize(
-      initializationSettings,
+      settings: initializationSettings,
       onDidReceiveNotificationResponse: (NotificationResponse response) async {
         // Handle notification tap
       },
@@ -50,11 +50,11 @@ class NotificationService {
     required DateTime scheduledDate,
   }) async {
     await flutterLocalNotificationsPlugin.zonedSchedule(
-      id,
-      title,
-      body,
-      tz.TZDateTime.from(scheduledDate, tz.local),
-      const NotificationDetails(
+      id: id,
+      title: title,
+      body: body,
+      scheduledDate: tz.TZDateTime.from(scheduledDate, tz.local),
+      notificationDetails: const NotificationDetails(
         android: AndroidNotificationDetails(
           'timetable_channel',
           'Timetable Notifications',
@@ -65,8 +65,6 @@ class NotificationService {
         iOS: DarwinNotificationDetails(),
       ),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
     );
   }
 
@@ -76,10 +74,10 @@ class NotificationService {
     required String body,
   }) async {
     await flutterLocalNotificationsPlugin.show(
-      id,
-      title,
-      body,
-      const NotificationDetails(
+      id: id,
+      title: title,
+      body: body,
+      notificationDetails: const NotificationDetails(
         android: AndroidNotificationDetails(
           'timetable_channel',
           'Timetable Notifications',
