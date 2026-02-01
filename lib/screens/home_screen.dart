@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_auth_service.dart';
 import '../main.dart';
 import 'timetable_screen.dart';
@@ -27,12 +28,18 @@ class _HomeScreenState extends State<HomeScreen> {
   final ApiAuthService _authService = ApiAuthService();
   String _userName = 'User';
   String? _userAvatar;
+  
+  // Streak data
+  int _streakDays = 1;
+  int _nextMilestone = 7;
+  bool _isLoadingStreak = true;
 
   @override
   void initState() {
     super.initState();
     _startCountdown();
     _loadUserData();
+    _calculateStreak();
   }
 
   Future<void> _loadUserData() async {
@@ -51,6 +58,62 @@ class _HomeScreenState extends State<HomeScreen> {
     if (hour < 12) return 'Good Morning,';
     if (hour < 17) return 'Good Afternoon,';
     return 'Good Evening,';
+  }
+
+  Future<void> _calculateStreak() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final lastLoginString = prefs.getString('last_login_date');
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      
+      int currentStreak = prefs.getInt('current_streak') ?? 0;
+
+      if (lastLoginString != null) {
+        final lastLogin = DateTime.parse(lastLoginString);
+        final lastLoginDate = DateTime(lastLogin.year, lastLogin.month, lastLogin.day);
+        
+        final difference = today.difference(lastLoginDate).inDays;
+        
+        if (difference == 0) {
+          // Already logged in today, do nothing to streak
+        } else if (difference == 1) {
+          // Consecutive day
+          currentStreak++;
+        } else {
+          // Streak broken
+          currentStreak = 1;
+        }
+      } else {
+        // First time login
+        currentStreak = 1;
+      }
+      
+      // Save today as last login
+      await prefs.setString('last_login_date', today.toIso8601String());
+      await prefs.setInt('current_streak', currentStreak);
+
+      if (mounted) {
+        setState(() {
+          _streakDays = currentStreak;
+          // Logic for next milestone: 3, 7, 14, 30, 60, 100...
+          if (_streakDays < 3) _nextMilestone = 3;
+          else if (_streakDays < 7) _nextMilestone = 7;
+          else if (_streakDays < 14) _nextMilestone = 14;
+          else if (_streakDays < 30) _nextMilestone = 30;
+          else _nextMilestone = _streakDays + 10;
+          
+          _isLoadingStreak = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error calculating streak: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingStreak = false;
+        });
+      }
+    }
   }
 
   // Build initials avatar placeholder
@@ -474,6 +537,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildStudyStreak(bool isDark) {
+    // Calculate progress fraction
+    // e.g. streak 5, milestone 7 -> 5/7
+    double progress = _streakDays / _nextMilestone;
+    if (progress > 1.0) progress = 1.0;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -504,7 +572,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    '5 Day Study Streak',
+                    '$_streakDays Day Study Streak',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -519,9 +587,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: const Color(0xFF0d59f2).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: const Text(
-                  'Next: 7 Days',
-                  style: TextStyle(
+                child: Text(
+                  'Next: $_nextMilestone Days',
+                  style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF0d59f2),
@@ -534,7 +602,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
-              value: 0.7,
+              value: progress,
               minHeight: 8,
               backgroundColor: isDark ? Colors.grey[800] : Colors.grey[200],
               valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF0d59f2)),
@@ -542,7 +610,9 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Keep it up! 2 more days for the \'Scholar\' badge.',
+            _streakDays == 1 
+              ? 'Great start! Consistency is key.' 
+              : 'Keep it up! ${_nextMilestone - _streakDays} more days for the next milestone.',
             style: TextStyle(
               fontSize: 12,
               color: isDark ? Colors.grey[400] : Colors.grey[600],

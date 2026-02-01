@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/timetable_class.dart';
 import '../services/api_timetable_service.dart';
 import '../services/notification_service.dart';
@@ -627,7 +628,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () {
-                      // TODO: Add note
+                      _addNote(classInfo);
                     },
                     icon: const Icon(Icons.edit_note, size: 18),
                     label: const Text('Add Note'),
@@ -772,5 +773,61 @@ class _TimetableScreenState extends State<TimetableScreen> {
         );
       }
     }
+  }
+
+  Future<void> _addNote(TimetableClass classInfo) async {
+    // Check if there is an existing note
+    final prefs = await SharedPreferences.getInstance();
+    final noteKey = 'note_${classInfo.courseCode}';
+    String? currentNote = prefs.getString(noteKey);
+    
+    final noteController = TextEditingController(text: currentNote);
+
+    if (!mounted) return;
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Note for ${classInfo.courseCode}'),
+          content: TextField(
+            controller: noteController,
+            maxLines: 5,
+            decoration: const InputDecoration(
+              hintText: 'Enter assignment details, reminders, or general notes...',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final text = noteController.text.trim();
+                if (text.isEmpty) {
+                  await prefs.remove(noteKey);
+                } else {
+                  await prefs.setString(noteKey, text);
+                }
+                
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Note saved successfully')),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0d59f2),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
