@@ -60,7 +60,7 @@ class ApiTimetableService {
   }
 
   // Add a class
-  Future<bool> addTimetableEntry(TimetableClass entry) async {
+  Future<String?> addTimetableEntry(TimetableClass entry) async {
     print('Attempting to add timetable entry: ${jsonEncode(entry.toJson())}');
     try {
       final headers = await _getHeaders();
@@ -71,19 +71,22 @@ class ApiTimetableService {
       );
 
       print('Add Class Response (${response.statusCode}): ${response.body}');
-      return response.statusCode == 200 || response.statusCode == 201;
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return null; // Success
+      } else {
+        return 'Failed (${response.statusCode}): ${response.body}';
+      }
     } catch (e) {
       print('Error adding timetable entry: $e');
-      return false;
+      return 'Error: $e';
     }
   }
   
   // Update a class
-  Future<bool> updateTimetableEntry(int dayIndex, int classIndex, TimetableClass entry) async {
+  Future<String?> updateTimetableEntry(int dayIndex, int classIndex, TimetableClass entry) async {
      print('Attempting to update class at day $dayIndex index $classIndex');
      try {
        final headers = await _getHeaders();
-       // Note: Using PUT /api/timetable/class/:dayIndex/:classIndex as requested
        final response = await http.put(
          Uri.parse('$baseUrl/api/timetable/class/$dayIndex/$classIndex'),
          headers: headers,
@@ -91,15 +94,19 @@ class ApiTimetableService {
        );
 
        print('Update Class Response (${response.statusCode}): ${response.body}');
-       return response.statusCode == 200;
+       if (response.statusCode == 200) {
+         return null; // Success
+       } else {
+         return 'Failed (${response.statusCode}): ${response.body}';
+       }
      } catch (e) {
        print('Error updating timetable entry: $e');
-       return false;
+       return 'Error: $e';
      }
   }
 
   // Delete a class
-  Future<bool> deleteTimetableEntry(int dayIndex, int classIndex) async {
+  Future<String?> deleteTimetableEntry(int dayIndex, int classIndex) async {
     print('Attempting to delete class at day $dayIndex index $classIndex');
      try {
        final headers = await _getHeaders();
@@ -109,9 +116,14 @@ class ApiTimetableService {
        );
 
        print('Delete Class Response (${response.statusCode}): ${response.body}');
-       return response.statusCode == 200;
+       if (response.statusCode == 200) {
+         return null; // Success
+       } else {
+         return 'Failed (${response.statusCode}): ${response.body}';
+       }
      } catch (e) {
        print('Error deleting timetable entry: $e');
-       return false;
+       return 'Error: $e';
      }
   }
+}

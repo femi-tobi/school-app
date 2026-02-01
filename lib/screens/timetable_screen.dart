@@ -95,7 +95,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
                           itemBuilder: (context, index) {
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 16),
-                              child: _buildClassCard(classes[index], isDark),
+                              child: _buildClassCard(classes[index], index, isDark),
                             );
                           },
                         ),
@@ -454,7 +454,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
     );
   }
 
-  Widget _buildClassCard(TimetableClass classInfo, bool isDark) {
+  Widget _buildClassCard(TimetableClass classInfo, int index, bool isDark) {
     Color accentColor;
     Color timeColor;
     
@@ -602,10 +602,10 @@ class _TimetableScreenState extends State<TimetableScreen> {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () {
-                      _setReminder(classInfo);
+                      _editClass(classInfo, index);
                     },
-                    icon: const Icon(Icons.alarm, size: 18),
-                    label: const Text('Set Reminder'),
+                    icon: const Icon(Icons.edit, size: 16),
+                    label: const Text('Edit'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: isDark ? Colors.grey[300] : Colors.grey[700],
                       side: BorderSide(
@@ -613,14 +613,8 @@ class _TimetableScreenState extends State<TimetableScreen> {
                             ? const Color(0xFF475569)
                             : const Color(0xFFCBD5E1),
                       ),
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      textStyle: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      // ...
                     ),
                   ),
                 ),
@@ -628,25 +622,16 @@ class _TimetableScreenState extends State<TimetableScreen> {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () {
-                      _addNote(classInfo);
+                      _confirmDelete(classInfo, index);
                     },
-                    icon: const Icon(Icons.edit_note, size: 18),
-                    label: const Text('Add Note'),
+                    icon: const Icon(Icons.delete_outline, size: 16),
+                    label: const Text('Delete'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: isDark ? Colors.grey[300] : Colors.grey[700],
+                      foregroundColor: Colors.red[400],
                       side: BorderSide(
-                        color: isDark
-                            ? const Color(0xFF475569)
-                            : const Color(0xFFCBD5E1),
+                        color: Colors.red.withOpacity(0.5),
                       ),
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      textStyle: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
                     ),
                   ),
                 ),
@@ -658,6 +643,73 @@ class _TimetableScreenState extends State<TimetableScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+  
+  void _editClass(TimetableClass classInfo, int index) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddTimetableEntryScreen(
+          classToEdit: classInfo,
+          dayIndex: _selectedDayIndex,
+          classIndex: index,
+        ),
+      ),
+    );
+    if (result == true) {
+      _loadTimetable();
+    }
+  }
+
+  void _confirmDelete(TimetableClass classInfo, int index) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Class?'),
+        content: Text('Are you sure you want to delete ${classInfo.courseCode}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context); // Close dialog
+              
+              setState(() => _isLoading = true);
+              
+              try {
+                final success = await _timetableService.deleteTimetableEntry(
+                  _selectedDayIndex,
+                  index,
+                );
+                
+                if (success) {
+                   if (mounted) {
+                     ScaffoldMessenger.of(context).showSnackBar(
+                       const SnackBar(content: Text('Class deleted successfully')),
+                     );
+                     _loadTimetable();
+                   }
+                } else {
+                   if (mounted) {
+                      setState(() => _isLoading = false);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Failed to delete class')),
+                      );
+                   }
+                }
+              } catch (e) {
+                 if (mounted) {
+                    setState(() => _isLoading = false);
+                 }
+              }
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
       ),
     );
   }
