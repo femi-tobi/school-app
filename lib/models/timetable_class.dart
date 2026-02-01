@@ -18,4 +18,30 @@ class TimetableClass {
     required this.iconName,
     required this.accentColor,
   });
+
+  factory TimetableClass.fromJson(Map<String, dynamic> json) {
+    return TimetableClass(
+      courseCode: json['courseCode'] ?? '',
+      courseName: json['courseName'] ?? '',
+      startTime: json['startTime'] ?? '',
+      endTime: json['endTime'] ?? '',
+      location: json['location'] ?? '',
+      professor: json['professor'] ?? '',
+      iconName: json['iconName'] ?? 'science',
+      accentColor: json['accentColor'] ?? 'primary',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'courseCode': courseCode,
+      'courseName': courseName,
+      'startTime': startTime,
+      'endTime': endTime,
+      'location': location,
+      'professor': professor,
+      'iconName': iconName,
+      'accentColor': accentColor,
+    };
+  }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../models/timetable_class.dart';
+import '../services/api_timetable_service.dart';
 
 class TimetableScreen extends StatefulWidget {
   const TimetableScreen({super.key});
@@ -25,41 +26,36 @@ class _TimetableScreenState extends State<TimetableScreen> {
     {'day': 'Sat', 'date': '19'},
   ];
 
-  final Map<int, List<TimetableClass>> _timetableData = {
-    2: [ // Wednesday
-      TimetableClass(
-        courseCode: 'PHY 101',
-        courseName: 'General Physics',
-        startTime: '08:00 AM',
-        endTime: '10:00 AM',
-        location: 'Hall A',
-        professor: 'Prof. A.S. Okoro',
-        iconName: 'science',
-        accentColor: 'primary',
-      ),
-      TimetableClass(
-        courseCode: 'MAT 102',
-        courseName: 'Calculus II',
-        startTime: '12:00 PM',
-        endTime: '02:00 PM',
-        location: 'CBT Centre',
-        professor: 'Dr. J.O. Mensah',
-        iconName: 'calculate',
-        accentColor: 'emerald',
-      ),
-      TimetableClass(
-        courseCode: 'CHM 101',
-        courseName: 'General Chemistry',
-        startTime: '03:00 PM',
-        endTime: '05:00 PM',
-        location: 'Lab 2',
-        professor: 'Dr. B.K. Abiola',
-        iconName: 'science',
-        accentColor: 'amber',
-      ),
-    ],
-    // Add more days as needed
-  };
+  Map<int, List<TimetableClass>> _timetableData = {};
+  bool _isLoading = true;
+  final ApiTimetableService _timetableService = ApiTimetableService();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTimetable();
+  }
+
+  Future<void> _loadTimetable() async {
+    try {
+      final data = await _timetableService.getTimetable();
+      if (mounted) {
+        setState(() {
+          _timetableData = data;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load timetable: $e')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -79,18 +75,26 @@ class _TimetableScreenState extends State<TimetableScreen> {
             
             // Class List
             Expanded(
-              child: classes.isEmpty
-                  ? _buildEmptyState(isDark)
-                  : ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(20, 24, 20, 100),
-                      itemCount: classes.length,
-                      itemBuilder: (context, index) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          child: _buildClassCard(classes[index], isDark),
-                        );
-                      },
-                    ),
+              child: _isLoading
+                  ? Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          const Color(0xFF0d59f2),
+                        ),
+                      ),
+                    )
+                  : classes.isEmpty
+                      ? _buildEmptyState(isDark)
+                      : ListView.builder(
+                          padding: const EdgeInsets.fromLTRB(20, 24, 20, 100),
+                          itemCount: classes.length,
+                          itemBuilder: (context, index) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: _buildClassCard(classes[index], isDark),
+                            );
+                          },
+                        ),
             ),
           ],
         ),

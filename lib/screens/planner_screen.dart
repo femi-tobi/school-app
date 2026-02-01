@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/study_session.dart';
+import '../services/api_planner_service.dart';
 
 class PlannerScreen extends StatefulWidget {
   const PlannerScreen({super.key});
@@ -21,44 +22,40 @@ class _PlannerScreenState extends State<PlannerScreen> {
     {'day': 'Sat', 'date': '17', 'hasTasks': false},
   ];
 
-  final List<StudySession> _todaySessions = [
-    StudySession(
-      courseCode: 'CS101',
-      courseName: 'Data Structures',
-      topic: 'Binary Search Trees',
-      startTime: '14:00',
-      endTime: '15:30',
-      durationMinutes: 90,
-      status: 'in_progress',
-      imageUrl: 'https://picsum.photos/seed/planner1/400/400',
-    ),
-    StudySession(
-      courseCode: 'ECON',
-      courseName: 'Macro Trends',
-      topic: 'Inflation & GDP',
-      startTime: '16:00',
-      endTime: '17:00',
-      durationMinutes: 60,
-      status: 'upcoming',
-      imageUrl: 'https://picsum.photos/seed/planner2/400/400',
-    ),
-  ];
+  List<StudySession> _todaySessions = [];
+  List<PastQuestion> _pastQuestions = [];
+  bool _isLoading = true;
+  final ApiPlannerService _plannerService = ApiPlannerService();
 
-  final List<PastQuestion> _pastQuestions = [
-    PastQuestion(
-      title: '2023 Finals: Calculus II',
-      subtitle: 'Not started • 12 Questions',
-      icon: 'quiz',
-      iconColor: 'orange',
-    ),
-    PastQuestion(
-      title: 'Bio Lab Report: Genetics',
-      subtitle: 'Completed yesterday',
-      icon: 'description',
-      iconColor: 'green',
-      completed: true,
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadPlannerData();
+  }
+
+  Future<void> _loadPlannerData() async {
+    try {
+      final sessions = await _plannerService.getStudySessions();
+      final questions = await _plannerService.getPastQuestions();
+      
+      if (mounted) {
+        setState(() {
+          _todaySessions = sessions;
+          _pastQuestions = questions;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load planner: $e')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -74,60 +71,68 @@ class _PlannerScreenState extends State<PlannerScreen> {
 
             // Content
             Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Weekly Calendar Chips
-                    _buildWeeklyCalendar(isDark),
-
-                    // Today's Sessions Section
-                    _buildSectionHeader(
-                      'Today\'s Sessions',
-                      'You have ${_todaySessions.length} blocks planned for today',
-                      isDark,
-                    ),
-
-                    // Sessions List
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: _isLoading
+                  ? Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          const Color(0xFF0d59f2),
+                        ),
+                      ),
+                    )
+                  : SingleChildScrollView(
                       child: Column(
-                        children: _todaySessions.map((session) {
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 16),
-                            child: _buildSessionCard(session, isDark),
-                          );
-                        }).toList(),
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Weekly Calendar Chips
+                          _buildWeeklyCalendar(isDark),
+
+                          // Today's Sessions Section
+                          _buildSectionHeader(
+                            'Today\'s Sessions',
+                            'You have ${_todaySessions.length} blocks planned for today',
+                            isDark,
+                          ),
+
+                          // Sessions List
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Column(
+                              children: _todaySessions.map((session) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 16),
+                                  child: _buildSessionCard(session, isDark),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+
+                          // Past Questions Section
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: _buildSectionHeader(
+                              'Past Questions Focus',
+                              'Review these for upcoming midterm',
+                              isDark,
+                            ),
+                          ),
+
+                          // Past Questions List
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Column(
+                              children: _pastQuestions.map((question) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 16),
+                                  child: _buildPastQuestionCard(question, isDark),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+
+                          const SizedBox(height: 100), // Space for FAB and bottom nav
+                        ],
                       ),
                     ),
-
-                    // Past Questions Section
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: _buildSectionHeader(
-                        'Past Questions Focus',
-                        'Review these for upcoming midterm',
-                        isDark,
-                      ),
-                    ),
-
-                    // Past Questions List
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Column(
-                        children: _pastQuestions.map((question) {
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 16),
-                            child: _buildPastQuestionCard(question, isDark),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-
-                    const SizedBox(height: 100), // Space for FAB and bottom nav
-                  ],
-                ),
-              ),
             ),
 
             // Bottom Navigation

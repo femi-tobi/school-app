@@ -18,6 +18,32 @@ class StudySession {
     required this.status,
     this.imageUrl,
   });
+
+  factory StudySession.fromJson(Map<String, dynamic> json) {
+    return StudySession(
+      courseCode: json['courseCode'] ?? '',
+      courseName: json['courseName'] ?? '',
+      topic: json['topic'] ?? '',
+      startTime: json['startTime'] ?? '',
+      endTime: json['endTime'] ?? '',
+      durationMinutes: json['durationMinutes'] ?? 0,
+      status: json['status'] ?? 'upcoming',
+      imageUrl: json['imageUrl'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'courseCode': courseCode,
+      'courseName': courseName,
+      'topic': topic,
+      'startTime': startTime,
+      'endTime': endTime,
+      'durationMinutes': durationMinutes,
+      'status': status,
+      'imageUrl': imageUrl,
+    };
+  }
 }
 
 class PastQuestion {
@@ -34,4 +60,24 @@ class PastQuestion {
     required this.iconColor,
     this.completed = false,
   });
+
+  factory PastQuestion.fromJson(Map<String, dynamic> json) {
+    return PastQuestion(
+      title: json['title'] ?? '',
+      subtitle: json['subtitle'] ?? '',
+      icon: json['icon'] ?? 'description',
+      iconColor: json['iconColor'] ?? 'green',
+      completed: json['completed'] ?? false,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'title': title,
+      'subtitle': subtitle,
+      'icon': icon,
+      'iconColor': iconColor,
+      'completed': completed,
+    };
+  }
 }

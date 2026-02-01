@@ -46,7 +46,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         _phoneController.text = user['phone'] ?? '';
         _universityController.text = user['university'] ?? '';
         _departmentController.text = user['department'] ?? '';
-        _selectedLevel = user['level'] ?? '100 Level';
+        
+        String level = user['level'] ?? '100 Level';
+        if (!_levels.contains(level)) {
+          level = '100 Level';
+        }
+        _selectedLevel = level;
+        
         _isLoading = false;
       });
     } else {
