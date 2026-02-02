@@ -14,6 +14,7 @@ import 'upload_past_question_screen.dart';
 import 'profile_screen.dart';
 import 'campus_news_screen.dart';
 import 'notification_screen.dart';
+import '../services/notification_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -56,7 +57,49 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadNextClass();
     _loadUnreadCount();
     _startCountdown();
+    // Initialize and schedule notifications
+    _initNotifications();
   }
+
+  Future<void> _initNotifications() async {
+    await ApiNotificationService().getNotifications(); // Refresh notifications from API
+    await NotificationService().init();
+    _scheduleNotifications();
+  }
+
+  Future<void> _scheduleNotifications() async {
+    // 1. Cancel existing to avoid duplicates
+    await NotificationService().cancelAllNotifications();
+
+    // 2. Schedule Classes
+    final timetable = await _timetableService.getTimetable();
+    final now = DateTime.now();
+    // Extend scheduling for the next 7 days
+    for (int i = 0; i < 7; i++) {
+       final dayDate = now.add(Duration(days: i));
+       final dayIndex = dayDate.weekday - 1; // 0=Mon
+       
+       if (timetable.containsKey(dayIndex)) {
+         for (final cls in timetable[dayIndex]!) {
+           final clsTime = _parseDateTime(dayDate, cls.startTime);
+           if (clsTime != null && clsTime.isAfter(now)) {
+             await NotificationService().scheduleClassNotification(
+               courseName: cls.courseName,
+               location: cls.location,
+               classDateTime: clsTime,
+             );
+           }
+         }
+       }
+    }
+
+    // 3. Schedule Study Sessions (Mock for now, would fetch from service)
+    // List<StudySession> sessions = await ApiPlannerService().getStudySessions();
+    // for (var session in sessions) {
+    //    // parse time and schedule
+    // }
+  }
+
 
   @override
   void dispose() {

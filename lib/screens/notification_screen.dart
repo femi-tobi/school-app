@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_notification_service.dart';
 import 'package:intl/intl.dart';
+import '../services/notification_service.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
@@ -141,6 +142,18 @@ class _NotificationScreenState extends State<NotificationScreen> {
             icon: const Icon(Icons.delete_outline),
             tooltip: 'Clear all',
             onPressed: _notifications.isEmpty ? null : _clearAll,
+          ),
+          // Debug Button
+          IconButton(
+            icon: const Icon(Icons.bug_report),
+            tooltip: 'Test Notification',
+            onPressed: () async {
+              await NotificationService().showNotification(
+                id: 999,
+                title: 'Test Notification',
+                body: 'This is a test notification from the app.',
+              );
+            },
           ),
         ],
       ),

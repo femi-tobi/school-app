@@ -1,6 +1,7 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
+import 'package:flutter/foundation.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -43,31 +44,6 @@ class NotificationService {
     );
   }
 
-  Future<void> scheduleNotification({
-    required int id,
-    required String title,
-    required String body,
-    required DateTime scheduledDate,
-  }) async {
-    await flutterLocalNotificationsPlugin.zonedSchedule(
-      id: id,
-      title: title,
-      body: body,
-      scheduledDate: tz.TZDateTime.from(scheduledDate, tz.local),
-      notificationDetails: const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'timetable_channel',
-          'Timetable Notifications',
-          channelDescription: 'Notifications for class schedule',
-          importance: Importance.max,
-          priority: Priority.high,
-        ),
-        iOS: DarwinNotificationDetails(),
-      ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-    );
-  }
-
   Future<void> showNotification({
     required int id,
     required String title,
@@ -79,9 +55,9 @@ class NotificationService {
       body: body,
       notificationDetails: const NotificationDetails(
         android: AndroidNotificationDetails(
-          'timetable_channel',
-          'Timetable Notifications',
-          channelDescription: 'Notifications for class schedule',
+          'school_app_channel',
+          'School App Notifications',
+          channelDescription: 'Notifications for classes and study sessions',
           importance: Importance.max,
           priority: Priority.high,
         ),
@@ -90,7 +66,85 @@ class NotificationService {
     );
   }
 
+  // -----------------------------------------------------------------------------
+  // SCHEDULE NOTIFICATIONS
+  // -----------------------------------------------------------------------------
+
+  /// Schedules a notification [minutesBefore] the [scheduledDate].
+  /// [id] should be unique (e.g. hash of class details + day).
+  Future<void> scheduleNotification({
+    required int id,
+    required String title,
+    required String body,
+    required DateTime scheduledDate,
+  }) async {
+    try {
+      // Ensure we are scheduling in the future.
+      if (scheduledDate.isBefore(DateTime.now())) return;
+
+      await flutterLocalNotificationsPlugin.zonedSchedule(
+        id: id,
+        title: title,
+        body: body,
+        scheduledDate: tz.TZDateTime.from(scheduledDate, tz.local),
+        notificationDetails: const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'school_app_channel',
+            'School App Notifications',
+            channelDescription: 'Notifications for classes and study sessions',
+            importance: Importance.max,
+            priority: Priority.high,
+          ),
+          iOS: DarwinNotificationDetails(),
+        ),
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+      );
+    } catch (e) {
+      debugPrint('Error scheduling notification: $e');
+    }
+  }
+
+  /// cancel all notifications
   Future<void> cancelAllNotifications() async {
     await flutterLocalNotificationsPlugin.cancelAll();
+  }
+
+  // -----------------------------------------------------------------------------
+  // SPECIFIC TRIGGERS
+  // -----------------------------------------------------------------------------
+
+  /// Schedule a notification 30 minutes before a class.
+  Future<void> scheduleClassNotification({
+    required String courseName,
+    required String location,
+    required DateTime classDateTime,
+  }) async {
+    final scheduledTime = classDateTime.subtract(const Duration(minutes: 30));
+    final id = classDateTime.millisecondsSinceEpoch ~/ 1000; 
+
+    await scheduleNotification(
+      id: id,
+      title: 'Upcoming Class: $courseName',
+      body: 'Class starts in 30 minutes at $location.',
+      scheduledDate: scheduledTime,
+    );
+  }
+  
+  /// Schedule a notification 15 minutes before a study session.
+  Future<void> scheduleStudySessionNotification({
+    required String topic,
+    required DateTime sessionDateTime,
+  }) async {
+    final scheduledTime = sessionDateTime.subtract(const Duration(minutes: 15));
+    final id = (sessionDateTime.millisecondsSinceEpoch ~/ 1000) + 1; // Offset ID
+
+    await scheduleNotification(
+      id: id,
+      title: 'Study Session Reminder',
+      body: 'Time to study "$topic" in 15 minutes!',
+      scheduledDate: scheduledTime,
+    );
   }
 }

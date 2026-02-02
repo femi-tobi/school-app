@@ -25,14 +25,26 @@ class ApiNotificationService {
 
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
-        // Assuming body['data'] contains the list or body itself is the list
-        if (body is Map && body.containsKey('data')) {
-          return body['data'];
-        } else if (body is List) {
+        
+        // Debug logging
+        // print('Notifications API Response: $body');
+
+        if (body is List) {
           return body;
-        } else if (body is Map && body.containsKey('notifications')) {
-           return body['notifications'];
+        } 
+        
+        if (body is Map) {
+          if (body.containsKey('data') && body['data'] is List) {
+            return body['data'];
+          }
+          if (body.containsKey('notifications') && body['notifications'] is List) {
+            return body['notifications'];
+          }
+          // If we receive a Map but expected a list inside it and didn't find it,
+          // check if the Map *itself* is what we are mistakenly returning (which causes the crash)
+          // Ideally we should return an empty list if we can't find the list.
         }
+        
         return [];
       } else {
         print('Failed to load notifications: ${response.statusCode}');
