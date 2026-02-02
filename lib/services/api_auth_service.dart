@@ -166,16 +166,41 @@ class ApiAuthService {
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-        var user = responseData['data'] ?? responseData['user'] ?? responseData;
+        var user = responseData['data'];
         
         // Unwrap if user object is nested (e.g. data: { user: {...} })
         if (user is Map && user.containsKey('user')) {
           user = user['user'];
+        } else if (responseData.containsKey('user')) {
+          user = responseData['user'];
+        } else if (user == null) {
+           user = responseData;
         }
         
         // Update local storage with fresh user data
-        if (user != null) {
+        if (user != null && user is Map<String, dynamic>) {
           final prefs = await SharedPreferences.getInstance();
+          
+          // PRESERVE LOCAL FIELDS:
+          // If API doesn't return university/dept/level, keep what we have locally
+          final String? oldDataStr = prefs.getString('user_data');
+          if (oldDataStr != null) {
+            try {
+              final oldData = jsonDecode(oldDataStr) as Map<String, dynamic>;
+              if (!user.containsKey('university') || user['university'] == null || user['university'].toString().isEmpty) {
+                if (oldData.containsKey('university')) user['university'] = oldData['university'];
+              }
+              if (!user.containsKey('department') || user['department'] == null || user['department'].toString().isEmpty) {
+                if (oldData.containsKey('department')) user['department'] = oldData['department'];
+              }
+              if (!user.containsKey('level') || user['level'] == null || user['level'].toString().isEmpty) {
+                if (oldData.containsKey('level')) user['level'] = oldData['level'];
+              }
+            } catch (e) {
+              print('Error merging old data: $e');
+            }
+          }
+
           await prefs.setString('user_data', jsonEncode(user));
         }
         
@@ -270,14 +295,35 @@ class ApiAuthService {
         body: jsonEncode(updateData),
       );
 
+      print('Update Profile Response: ${response.statusCode}');
+      print('Update Profile Body: ${response.body}');
+
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-        final user = responseData['data'] ?? responseData['user'] ?? responseData;
-        
-        // Update local storage
-        if (user != null) {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('user_data', jsonEncode(user));
+        // Handle nesting: data.user or data or user
+        var user = responseData['data'];
+        if (user is Map && user.containsKey('user')) {
+           user = user['user'];
+        } else if (responseData.containsKey('user')) {
+           user = responseData['user'];
+        } else if (user == null) {
+           user = responseData;
+        }
+
+        print('Parsed User after update: $user');
+
+        // Optimistically merge our sent data into the user object for local storage
+        // This fixes the issue where the backend doesn't return these fields
+        if (user != null && user is Map<String, dynamic>) {
+           if (university != null) user['university'] = university;
+           if (department != null) user['department'] = department;
+           if (level != null) user['level'] = level;
+           if (phone != null) user['phone'] = phone;
+           if (name != null) user['name'] = name;
+           if (avatar != null) user['avatar'] = avatar;
+
+           final prefs = await SharedPreferences.getInstance();
+           await prefs.setString('user_data', jsonEncode(user));
         }
         
         return {'success': true, 'user': user, 'message': 'Profile updated'};

@@ -14,20 +14,13 @@ class TimetableScreen extends StatefulWidget {
 }
 
 class _TimetableScreenState extends State<TimetableScreen> {
-  int _selectedDayIndex = 2; // Wednesday is selected by default
+  int _selectedDayIndex = 0;
   int _selectedBottomNavIndex = 1; // Timetable tab selected
   bool _showMonthCalendar = false; // Toggle between week and month view
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
 
-  final List<Map<String, dynamic>> _weekDays = [
-    {'day': 'Mon', 'date': '14'},
-    {'day': 'Tue', 'date': '15'},
-    {'day': 'Wed', 'date': '16'},
-    {'day': 'Thu', 'date': '17'},
-    {'day': 'Fri', 'date': '18'},
-    {'day': 'Sat', 'date': '19'},
-  ];
+  List<Map<String, String>> _weekDays = [];
 
   Map<int, List<TimetableClass>> _timetableData = {};
   bool _isLoading = true;
@@ -36,8 +29,40 @@ class _TimetableScreenState extends State<TimetableScreen> {
   @override
   void initState() {
     super.initState();
+    _generateWeekDays();
+    // Default to today (Mon=1 -> 0, Sat=6 -> 5, Sun=7 -> 6)
+    _selectedDayIndex = DateTime.now().weekday - 1;
+    
     _loadTimetable();
     NotificationService().init();
+  }
+  
+  void _generateWeekDays() {
+    final now = DateTime.now();
+    // Find Monday of this week
+    // weekday: 1=Mon ... 7=Sun
+    final monday = now.subtract(Duration(days: now.weekday - 1));
+    
+    _weekDays = List.generate(7, (index) {
+      final date = monday.add(Duration(days: index));
+      return {
+        'day': _getDayName(date.weekday),
+        'date': date.day.toString(),
+      };
+    });
+  }
+
+  String _getDayName(int weekday) {
+    switch (weekday) {
+      case 1: return 'Mon';
+      case 2: return 'Tue';
+      case 3: return 'Wed';
+      case 4: return 'Thu';
+      case 5: return 'Fri';
+      case 6: return 'Sat';
+      case 7: return 'Sun';
+      default: return '';
+    }
   }
 
   Future<void> _loadTimetable() async {
@@ -369,10 +394,8 @@ class _TimetableScreenState extends State<TimetableScreen> {
           setState(() {
             _selectedDay = selectedDay;
             _focusedDay = focusedDay;
-            // Update selected day index based on the selected date
-            if (selectedDay.day == 16) {
-              _selectedDayIndex = 2; // Wednesday has classes
-            }
+            // Update selected "day index" (0=Mon, 6=Sun)
+            _selectedDayIndex = selectedDay.weekday - 1;
           });
         },
         onPageChanged: (focusedDay) {
@@ -666,17 +689,17 @@ class _TimetableScreenState extends State<TimetableScreen> {
   void _confirmDelete(TimetableClass classInfo, int index) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Delete Class?'),
         content: Text('Are you sure you want to delete ${classInfo.courseCode}?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context); // Close dialog
+              Navigator.pop(dialogContext); // Close dialog
               
               setState(() => _isLoading = true);
               

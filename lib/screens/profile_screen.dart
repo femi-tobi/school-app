@@ -64,7 +64,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // Helper to get user field with fallback
   String _getUserField(String field, String fallback) {
     if (_userData == null) return fallback;
-    final value = _userData![field];
+    var value = _userData![field];
+    
+    // Check for "fullName" alias if "name" is missing
+    if ((value == null || value.toString().isEmpty) && field == 'name') {
+      value = _userData!['fullName'];
+    }
+
     if (value == null || value.toString().isEmpty) return fallback;
     return value.toString();
   }
@@ -278,7 +284,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${_getUserField('department', 'No department')} | ${_getUserField('level', '')} Level',
+                          '${_getUserField('department', 'No department')} | ${_getUserField('level', '')}',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,

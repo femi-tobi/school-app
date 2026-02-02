@@ -31,6 +31,8 @@ class _AddTimetableEntryScreenState extends State<AddTimetableEntryScreen> {
   TimeOfDay _startTime = const TimeOfDay(hour: 8, minute: 0);
   TimeOfDay _endTime = const TimeOfDay(hour: 10, minute: 0);
   bool _isLoading = false;
+  bool _isReminderEnabled = false;
+  final _noteController = TextEditingController();
 
   final List<String> _days = [
     'Monday',
@@ -89,6 +91,7 @@ class _AddTimetableEntryScreenState extends State<AddTimetableEntryScreen> {
     _courseNameController.dispose();
     _locationController.dispose();
     _professorController.dispose();
+    _noteController.dispose();
     super.dispose();
   }
 
@@ -312,6 +315,7 @@ class _AddTimetableEntryScreenState extends State<AddTimetableEntryScreen> {
                     value!.isEmpty ? 'Please enter location' : null,
               ),
               const SizedBox(height: 16),
+              const SizedBox(height: 16),
               _buildTextField(
                 controller: _professorController,
                 label: 'Professor',
@@ -319,6 +323,44 @@ class _AddTimetableEntryScreenState extends State<AddTimetableEntryScreen> {
                 validator: (value) =>
                     value!.isEmpty ? 'Please enter professor' : null,
               ),
+              
+              const SizedBox(height: 16),
+              
+              // Reminder Switch
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.notifications_outlined),
+                        SizedBox(width: 8),
+                        Text('Set Reminder', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    Switch(
+                      value: _isReminderEnabled,
+                      onChanged: (value) => setState(() => _isReminderEnabled = value),
+                      activeColor: const Color(0xFF0d59f2),
+                    ),
+                  ],
+                ),
+              ),
+              
+              const SizedBox(height: 16),
+
+              _buildTextField(
+                controller: _noteController,
+                label: 'Add Note',
+                hint: 'e.g. Bring lab coat',
+                validator: null, // Optional
+              ),
+              
               const SizedBox(height: 32),
               
               SizedBox(

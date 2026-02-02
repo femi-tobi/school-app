@@ -25,32 +25,43 @@ class ApiTimetableService {
       );
 
       print('Get Timetable Status: ${response.statusCode}');
+      print('Get Timetable Body: ${response.body}');
       
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
         final Map<int, List<TimetableClass>> timetable = {};
         
-        // Handle response structure logic based on API return
-        // Assuming API returns a list of classes or a map keyed by dayIndex
-        if (data is List) {
-          for (var item in data) {
+        dynamic scheduleData;
+        
+        // Handle nested structure: body['data']['schedule']
+        if (body is Map && body.containsKey('data') && body['data'] is Map && body['data'].containsKey('schedule')) {
+          scheduleData = body['data']['schedule'];
+        } else if (body is Map && body.containsKey('schedule')) {
+          scheduleData = body['schedule'];
+        } else {
+          scheduleData = body; // Fallback to assuming root content
+        }
+
+        if (scheduleData is Map) {
+             scheduleData.forEach((key, value) {
+               final dayIdx = int.tryParse(key.toString()) ?? -1;
+               if (dayIdx >= 0 && value is List) {
+                 timetable[dayIdx] = value.map((e) => TimetableClass.fromJson(e)).toList();
+               }
+             });
+        } else if (scheduleData is List) {
+          for (var item in scheduleData) {
             final entry = TimetableClass.fromJson(item);
             if (!timetable.containsKey(entry.dayIndex)) {
               timetable[entry.dayIndex] = [];
             }
             timetable[entry.dayIndex]!.add(entry);
           }
-        } else if (data is Map) {
-             // Handle if keys are day indices
-             data.forEach((key, value) {
-               final dayIdx = int.tryParse(key.toString()) ?? 0;
-               if (value is List) {
-                 timetable[dayIdx] = value.map((e) => TimetableClass.fromJson(e)).toList();
-               }
-             });
         }
         
         return timetable;
+      }
       }
       return {};
     } catch (e) {

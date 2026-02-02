@@ -3,6 +3,9 @@ import 'dart:async';
 
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_auth_service.dart';
+import '../services/api_timetable_service.dart';
+import '../services/api_notification_service.dart';
+import '../models/timetable_class.dart';
 import '../main.dart';
 import 'timetable_screen.dart';
 import 'planner_screen.dart';
@@ -10,6 +13,7 @@ import 'past_questions_screen.dart';
 import 'upload_past_question_screen.dart';
 import 'profile_screen.dart';
 import 'campus_news_screen.dart';
+import 'notification_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,14 +24,24 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
-  int _minutes = 12;
-  int _seconds = 45;
   Timer? _timer;
   
   // User data
   final ApiAuthService _authService = ApiAuthService();
   String _userName = 'User';
   String? _userAvatar;
+  
+  // Next Class Data
+  final ApiTimetableService _timetableService = ApiTimetableService();
+  TimetableClass? _nextClass;
+  DateTime? _nextClassDateTime; // The exact Date and Time of the next class
+  Duration _timeUntilClass = Duration.zero;
+  bool _isLoadingNextClass = true;
+
+  // Notifications
+  final ApiNotificationService _notificationService = ApiNotificationService();
+  int _unreadNotificationsCount = 0;
+
   
   // Streak data
   int _streakDays = 1;
@@ -37,19 +51,32 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _startCountdown();
     _loadUserData();
     _calculateStreak();
+    _loadNextClass();
+    _loadUnreadCount();
+    _startCountdown();
   }
 
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+  
   Future<void> _loadUserData() async {
     final user = await _authService.getCurrentUser();
     if (user != null && mounted) {
       setState(() {
-        _userName = user['name'] ?? 'User';
+        _userName = user['fullName'] ?? user['name'] ?? 'User';
         _userAvatar = user['avatar'];
       });
     }
+  }
+
+  Future<void> _loadUnreadCount() async {
+    final count = await _notificationService.getUnreadCount();
+    if (mounted) setState(() => _unreadNotificationsCount = count);
   }
 
   // Get greeting based on time of day
@@ -58,6 +85,120 @@ class _HomeScreenState extends State<HomeScreen> {
     if (hour < 12) return 'Good Morning,';
     if (hour < 17) return 'Good Afternoon,';
     return 'Good Evening,';
+  }
+
+  Future<void> _loadNextClass() async {
+    try {
+      final timetable = await _timetableService.getTimetable();
+      final now = DateTime.now();
+      final todayIndex = now.weekday - 1; // 0=Mon, 6=Sun
+      
+      TimetableClass? foundClass;
+      DateTime? foundClassDateTime;
+      
+      // 1. Check classes for today (starting from now)
+      if (timetable.containsKey(todayIndex)) {
+        final todayClasses = timetable[todayIndex]!;
+        
+        for (final cls in todayClasses) {
+           final clsTime = _parseDateTime(now, cls.startTime);
+           if (clsTime != null && clsTime.isAfter(now)) {
+             // Found a class later today!
+             if (foundClass == null) {
+               foundClass = cls;
+               foundClassDateTime = clsTime;
+             } else if (clsTime.isBefore(foundClassDateTime!)) {
+               foundClass = cls;
+               foundClassDateTime = clsTime;
+             }
+           }
+        }
+      }
+      
+      // 2. If no class found today, check subsequent days (up to 7 days)
+      if (foundClass == null) {
+        for (int i = 1; i <= 7; i++) {
+          final nextDayIndex = (todayIndex + i) % 7;
+          if (timetable.containsKey(nextDayIndex)) {
+            final classes = timetable[nextDayIndex]!;
+            if (classes.isNotEmpty) {
+               // Parse times to find the earliest one in the day
+               for (final cls in classes) {
+                 // Calculate date for this day
+                 final clsDate = now.add(Duration(days: i));
+                 // Set time
+                 final clsTime = _parseDateTime(clsDate, cls.startTime);
+                 
+                 if (clsTime != null) {
+                   if (foundClass == null) {
+                      foundClass = cls;
+                      foundClassDateTime = clsTime;
+                   } else if (clsTime.isBefore(foundClassDateTime!)) {
+                      foundClass = cls;
+                      foundClassDateTime = clsTime;
+                   }
+                 }
+               }
+               // If we found any class on this nearest day, stop searching further days
+               if (foundClass != null) break;
+            }
+          }
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _nextClass = foundClass;
+          _nextClassDateTime = foundClassDateTime;
+          _isLoadingNextClass = false;
+        });
+      }
+      
+    } catch (e) {
+      print('Error loading next class: $e');
+      if (mounted) setState(() => _isLoadingNextClass = false);
+    }
+  }
+
+  DateTime? _parseDateTime(DateTime date, String timeHtml) {
+    try {
+      // timeHtml format example: "08:00 AM"
+      final parts = timeHtml.trim().split(' ');
+      if (parts.length != 2) return null;
+      
+      final timeParts = parts[0].split(':');
+      int hour = int.parse(timeParts[0]);
+      int minute = int.parse(timeParts[1]);
+      final period = parts[1].toUpperCase();
+
+      if (period == 'PM' && hour != 12) hour += 12;
+      if (period == 'AM' && hour == 12) hour = 0;
+
+      return DateTime(date.year, date.month, date.day, hour, minute);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  void _startCountdown() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_nextClassDateTime == null) return;
+      
+      final now = DateTime.now();
+      final diff = _nextClassDateTime!.difference(now);
+      
+      if (mounted) {
+        setState(() {
+          if (diff.isNegative) {
+            _timeUntilClass = Duration.zero;
+            // Optionally reload to find the next one
+            if (diff.abs().inSeconds > 60) _loadNextClass(); 
+          } else {
+            _timeUntilClass = diff;
+          }
+        });
+      }
+    });
   }
 
   Future<void> _calculateStreak() async {
@@ -76,7 +217,7 @@ class _HomeScreenState extends State<HomeScreen> {
         final difference = today.difference(lastLoginDate).inDays;
         
         if (difference == 0) {
-          // Already logged in today, do nothing to streak
+          // Already logged in today
         } else if (difference == 1) {
           // Consecutive day
           currentStreak++;
@@ -96,7 +237,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) {
         setState(() {
           _streakDays = currentStreak;
-          // Logic for next milestone: 3, 7, 14, 30, 60, 100...
+          // Logic for next milestone
           if (_streakDays < 3) _nextMilestone = 3;
           else if (_streakDays < 7) _nextMilestone = 7;
           else if (_streakDays < 14) _nextMilestone = 14;
@@ -131,27 +272,6 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
-  void _startCountdown() {
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      setState(() {
-        if (_seconds > 0) {
-          _seconds--;
-        } else if (_minutes > 0) {
-          _minutes--;
-          _seconds = 59;
-        } else {
-          timer.cancel();
-        }
-      });
-    });
   }
 
   @override
@@ -284,24 +404,44 @@ class _HomeScreenState extends State<HomeScreen> {
                   Icons.notifications_outlined,
                   color: isDark ? Colors.grey[200] : Colors.grey[700],
                 ),
-                onPressed: () {},
+                onPressed: () async {
+                  await Navigator.push(
+                    context, 
+                    MaterialPageRoute(builder: (_) => const NotificationScreen())
+                  );
+                  _loadUnreadCount(); // Refresh on return
+                },
               ),
-              Positioned(
-                right: 10,
-                top: 10,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isDark ? const Color(0xFF101622) : const Color(0xFFF5F6F8),
-                      width: 1.5,
+              if (_unreadNotificationsCount > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF101622) : const Color(0xFFF5F6F8),
+                        width: 1.5,
+                      ),
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Center(
+                      child: Text(
+                        _unreadNotificationsCount > 9 ? '9+' : '$_unreadNotificationsCount',
+                        style: const TextStyle(
+                          color: Colors.white, 
+                          fontSize: 10, 
+                          fontWeight: FontWeight.bold
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
             ],
           ),
         ],
@@ -338,7 +478,34 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-          child: Column(
+          child: _isLoadingNextClass
+              ? const Padding(
+                  padding: EdgeInsets.all(32.0),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              : _nextClass == null
+                  ? Padding(
+                      padding: const EdgeInsets.all(32.0),
+                      child: Center(
+                        child: Column(
+                          children: [
+                            Icon(Icons.event_busy, 
+                                size: 48, 
+                                color: isDark ? Colors.grey[600] : Colors.grey[400]),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No Upcoming Classes',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? Colors.grey[400] : Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : Column(
             children: [
               // Class Image
               Stack(
@@ -349,7 +516,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
                       image: DecorationImage(
                         image: NetworkImage(
-                          'https://lh3.googleusercontent.com/aida-public/AB6AXuBfScWBC6pW7XFg0f2jeDiS-rrlLS9NPok4JhydaOqgzXa1MIHoHaTfzSsCL0_zdrADTaQl1uz8o9qvEAhRB_lnc2VXT1vqoiwSQP0nhsD5yZjrQoTT3l2DIH2TSnso1eLmEbuxAJQqv3RKgz0AVtluh2sYI2KVplprERG1h8NL40uV9_Uy0a2U5oSiiEnFNhjrjt8RU6-o8nqYH-PY40QKii4oh5ju0-Kb-xzf3xzYdTJ-0ft4WxWq0xVEmV1yJPR8JC5_3AC9znU',
+                          'https://picsum.photos/seed/tech/400/200', // Generic tech image for now
                         ),
                         fit: BoxFit.cover,
                       ),
@@ -383,7 +550,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            'LIVE IN $_minutes:${_seconds.toString().padLeft(2, '0')}',
+                            'STARTS IN ${_timeUntilClass.inHours}:${(_timeUntilClass.inMinutes % 60).toString().padLeft(2, '0')}:${(_timeUntilClass.inSeconds % 60).toString().padLeft(2, '0')}',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 10,
@@ -392,9 +559,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        const Text(
-                          'CSC 301 - Operating Systems',
-                          style: TextStyle(
+                        Text(
+                          '${_nextClass!.courseCode} - ${_nextClass!.courseName}',
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -414,77 +581,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     // Countdown
                     Row(
                       children: [
-                        Expanded(
-                          child: Column(
-                            children: [
-                              Container(
-                                height: 48,
-                                decoration: BoxDecoration(
-                                  color: isDark ? const Color(0xFF334155) : Colors.grey[100],
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
-                                  ),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    '$_minutes',
-                                    style: const TextStyle(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF0d59f2),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'MINUTES',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: isDark ? Colors.grey[400] : Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            children: [
-                              Container(
-                                height: 48,
-                                decoration: BoxDecoration(
-                                  color: isDark ? const Color(0xFF334155) : Colors.grey[100],
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
-                                  ),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    _seconds.toString().padLeft(2, '0'),
-                                    style: const TextStyle(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF0d59f2),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'SECONDS',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: isDark ? Colors.grey[400] : Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                        _buildTimeBox(isDark, '${_timeUntilClass.inHours}', 'HOURS'),
+                        const SizedBox(width: 8),
+                         _buildTimeBox(isDark, '${_timeUntilClass.inMinutes % 60}', 'MINS'),
+                        const SizedBox(width: 8),
+                         _buildTimeBox(isDark, '${_timeUntilClass.inSeconds % 60}', 'SECS'),
                       ],
                     ),
                     
@@ -496,27 +597,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         Expanded(
                           child: ElevatedButton.icon(
                             onPressed: () {},
-                            icon: const Icon(Icons.map, size: 18),
-                            label: const Text('Find Room 402'),
+                            icon: const Icon(Icons.location_on, size: 18),
+                            label: Text('Loc: ${_nextClass!.location}'), // Show Location
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF0d59f2),
                               foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () {},
-                            icon: const Icon(Icons.video_camera_front, size: 18),
-                            label: const Text('Join Virtual'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF0d59f2).withOpacity(0.1),
-                              foregroundColor: const Color(0xFF0d59f2),
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
@@ -533,6 +618,44 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildTimeBox(bool isDark, String value, String label) {
+    return Expanded(
+      child: Column(
+        children: [
+          Container(
+            height: 48,
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF334155) : Colors.grey[100],
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
+              ),
+            ),
+            child: Center(
+              child: Text(
+                value.padLeft(2, '0'),
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0d59f2),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
