@@ -680,31 +680,23 @@ class _TimetableScreenState extends State<TimetableScreen> {
               
               setState(() => _isLoading = true);
               
-              try {
-                final success = await _timetableService.deleteTimetableEntry(
-                  _selectedDayIndex,
-                  index,
-                );
-                
-                if (success) {
-                   if (mounted) {
-                     ScaffoldMessenger.of(context).showSnackBar(
-                       const SnackBar(content: Text('Class deleted successfully')),
-                     );
-                     _loadTimetable();
-                   }
+              final error = await _timetableService.deleteTimetableEntry(
+                _selectedDayIndex,
+                index,
+              );
+              
+              if (mounted) {
+                if (error == null) {
+                   ScaffoldMessenger.of(context).showSnackBar(
+                     const SnackBar(content: Text('Class deleted successfully')),
+                   );
+                   _loadTimetable();
                 } else {
-                   if (mounted) {
-                      setState(() => _isLoading = false);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Failed to delete class')),
-                      );
-                   }
+                   setState(() => _isLoading = false);
+                   ScaffoldMessenger.of(context).showSnackBar(
+                     SnackBar(content: Text(error)),
+                   );
                 }
-              } catch (e) {
-                 if (mounted) {
-                    setState(() => _isLoading = false);
-                 }
               }
             },
             child: const Text('Delete', style: TextStyle(color: Colors.red)),

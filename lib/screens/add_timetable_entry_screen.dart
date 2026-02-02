@@ -14,6 +14,8 @@ class AddTimetableEntryScreen extends StatefulWidget {
     this.classIndex,
   });
 
+  bool get isEditing => classToEdit != null;
+
   @override
   State<AddTimetableEntryScreen> createState() => _AddTimetableEntryScreenState();
 }
@@ -107,62 +109,62 @@ class _AddTimetableEntryScreenState extends State<AddTimetableEntryScreen> {
   }
 
   Future<void> _saveEntry() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
+    if (!_formKey.currentState!.validate()) return;
 
-      final dayIndex = _days.indexOf(_selectedDay);
+    setState(() => _isLoading = true);
 
-      final newClass = TimetableClass(
-        dayIndex: dayIndex, // Add dayIndex
-        courseCode: _courseCodeController.text,
-        courseName: _courseNameController.text,
-        startTime: _formatTimeOfDay(_startTime),
-        endTime: _formatTimeOfDay(_endTime),
-        location: _locationController.text,
-        professor: _professorController.text,
-        iconName: 'science', // Default icon
-        accentColor: 'primary', // Default color
+    // Calculate dayIndex
+    // For Monday=0, Tuesday=1 ...
+    final dayIndex = _days.indexOf(_selectedDay);
+
+    final newClass = TimetableClass(
+      id: widget.classToEdit?.id,
+      dayIndex: dayIndex, // Add dayIndex
+      courseCode: _courseCodeController.text,
+      courseName: _courseNameController.text,
+      startTime: _formatTimeOfDay(_startTime),
+      endTime: _formatTimeOfDay(_endTime),
+      location: _locationController.text,
+      professor: _professorController.text,
+      iconName: 'science', // Default icon
+      accentColor: 'primary', // Default color
+    );
+
+    String? error;
+    final apiService = ApiTimetableService();
+
+    if (widget.isEditing) {
+       // Update existing class
+       error = await apiService.updateTimetableEntry(
+         widget.dayIndex ?? dayIndex, 
+         widget.classIndex ?? 0, 
+         newClass
+       );
+    } else {
+       // Add new class
+       error = await apiService.addTimetableEntry(newClass);
+    }
+
+    if (!mounted) return;
+
+    setState(() => _isLoading = false);
+
+    if (error == null) { // Success
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(widget.isEditing ? 'Class updated successfully' : 'Class added successfully'),
+          backgroundColor: Colors.green,
+        ),
       );
-
-      final apiService = ApiTimetableService();
-      bool success;
-      
-      if (widget.classToEdit != null && widget.classIndex != null) {
-        // Update existing
-        success = await apiService.updateTimetableEntry(
-          widget.dayIndex ?? dayIndex, // Use original day index for path if needed, or new one? API likely wants path to find it. 
-          // Wait, if I change the day, the path dayIndex refers to OLD location. 
-          // But the BODY dayIndex is the NEW location.
-          // The API route is PUT /class/:dayIndex/:classIndex. 
-          // Assuming params are for FINDING the record.
-          widget.classIndex!, 
-          newClass
-        );
-      } else {
-        // Add new
-        success = await apiService.addTimetableEntry(newClass);
-      }
-
-      print('${widget.classToEdit != null ? "Update" : "Add"} timetable entry success: $success');
-
-      setState(() {
-        _isLoading = false;
-      });
-
-      if (mounted) {
-        if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Class ${widget.classToEdit != null ? "updated" : "added"} successfully')),
-          );
-          Navigator.of(context).pop(true); // Return true to trigger refresh
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to ${widget.classToEdit != null ? "update" : "add"} class')),
-          );
-        }
-      }
+      Navigator.pop(context, true);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
+        ),
+      );
     }
   }
 

@@ -65,7 +65,7 @@ class ApiTimetableService {
     try {
       final headers = await _getHeaders();
       final response = await http.post(
-        Uri.parse('$baseUrl/api/timetable/class'),
+        Uri.parse('$baseUrl/api/timetable/class'), // Restored /class
         headers: headers,
         body: jsonEncode(entry.toJson()),
       );
@@ -88,7 +88,7 @@ class ApiTimetableService {
      try {
        final headers = await _getHeaders();
        final response = await http.put(
-         Uri.parse('$baseUrl/api/timetable/class/$dayIndex/$classIndex'),
+         Uri.parse('$baseUrl/api/timetable/class/$dayIndex/$classIndex'), // Restored /class
          headers: headers,
          body: jsonEncode(entry.toJson()),
        );
@@ -111,7 +111,7 @@ class ApiTimetableService {
      try {
        final headers = await _getHeaders();
        final response = await http.delete(
-         Uri.parse('$baseUrl/api/timetable/class/$dayIndex/$classIndex'),
+         Uri.parse('$baseUrl/api/timetable/class/$dayIndex/$classIndex'), // Restored /class
          headers: headers,
        );
 
